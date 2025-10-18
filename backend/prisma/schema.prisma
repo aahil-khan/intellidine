@@ -1,0 +1,388 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========== TENANTS & USERS ==========
+
+model Tenant {
+  id              String   @id @default(uuid())
+  name            String
+  address         String
+  contact         String
+  owner_email     String
+  operating_hours Json
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  is_active       Boolean  @default(true)
+
+  tables         Table[]
+  users          User[]
+  menu_items     MenuItem[]
+  orders         Order[]
+  inventory      Inventory[]
+  pricing_rules  PricingRule[]
+
+  @@map("tenants")
+}
+
+model User {
+  id                String   @id @default(uuid())
+  tenant_id         String?
+  username          String   @unique
+  email             String   @unique
+  password_hash     String
+  role              Role
+  is_temp_password  Boolean  @default(false)
+  is_active         Boolean  @default(true)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  tenant Tenant? @relation(fields: [tenant_id], references: [id])
+
+  @@map("users")
+}
+
+enum Role {
+  SUPER_ADMIN
+  MANAGER
+  KITCHEN_STAFF
+  WAITER
+}
+
+model Customer {
+  id           String   @id @default(uuid())
+  phone_number String   @unique
+  name         String?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  orders Order[]
+
+  @@map("customers")
+}
+
+model OtpVerification {
+  id           String   @id @default(uuid())
+  phone_number String
+  otp_hash     String
+  created_at   DateTime @default(now())
+  expires_at   DateTime
+  verified     Boolean  @default(false)
+
+  @@index([phone_number, expires_at])
+  @@map("otp_verifications")
+}
+
+// ========== TABLES ==========
+
+model Table {
+  id           String   @id @default(uuid())
+  tenant_id    String
+  table_number Int
+  capacity     Int
+  qr_code_url  String
+  created_at   DateTime @default(now())
+
+  tenant Tenant  @relation(fields: [tenant_id], references: [id])
+  orders Order[]
+
+  @@unique([tenant_id, table_number])
+  @@map("tables")
+}
+
+// ========== MENU ==========
+
+model Category {
+  id            String     @id @default(uuid())
+  name          String
+  display_order Int        @default(0)
+  created_at    DateTime   @default(now())
+
+  menu_items MenuItem[]
+
+  @@map("categories")
+}
+
+model MenuItem {
+  id                  String   @id @default(uuid())
+  tenant_id           String
+  category_id         String
+  name                String
+  description         String?
+  image_url           String?
+  price               Decimal  @db.Decimal(10, 2)
+  cost_price          Decimal? @db.Decimal(10, 2)
+  original_price      Decimal? @db.Decimal(10, 2)
+  discount_percentage Int      @default(0)
+  dietary_tags        String[]
+  preparation_time    Int
+  is_available        Boolean  @default(true)
+  is_deleted          Boolean  @default(false)
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  tenant             Tenant             @relation(fields: [tenant_id], references: [id])
+  category           Category           @relation(fields: [category_id], references: [id])
+  order_items        OrderItem[]
+  pricing_history    PricingHistory[]
+  recipe_ingredients RecipeIngredient[]
+
+  @@index([tenant_id, is_available, is_deleted])
+  @@map("menu_items")
+}
+
+model PricingHistory {
+  id               String   @id @default(uuid())
+  item_id          String
+  old_price        Decimal  @db.Decimal(10, 2)
+  new_price        Decimal  @db.Decimal(10, 2)
+  discount_percent Int      @default(0)
+  reason           String?
+  changed_by       String
+  changed_at       DateTime @default(now())
+
+  item MenuItem @relation(fields: [item_id], references: [id])
+
+  @@map("pricing_history")
+}
+
+// ========== ORDERS ==========
+
+model Order {
+  id           String      @id @default(uuid())
+  tenant_id    String
+  customer_id  String
+  table_number Int
+  status       OrderStatus @default(PENDING)
+  subtotal     Decimal     @db.Decimal(10, 2)
+  gst          Decimal     @db.Decimal(10, 2)
+  total        Decimal     @db.Decimal(10, 2)
+  created_at   DateTime    @default(now())
+  updated_at   DateTime    @updatedAt
+
+  tenant         Tenant              @relation(fields: [tenant_id], references: [id])
+  customer       Customer            @relation(fields: [customer_id], references: [id])
+  table          Table?              @relation(fields: [tenant_id, table_number], references: [tenant_id, table_number])
+  items          OrderItem[]
+  status_history OrderStatusHistory[]
+  payment        Payment?
+
+  @@index([tenant_id, status, created_at])
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  READY
+  SERVED
+  COMPLETED
+  CANCELLED
+  AWAITING_CASH_PAYMENT
+}
+
+model OrderItem {
+  id               String  @id @default(uuid())
+  order_id         String
+  item_id          String
+  quantity         Int
+  unit_price       Decimal @db.Decimal(10, 2)
+  subtotal         Decimal @db.Decimal(10, 2)
+  special_requests String?
+
+  order Order    @relation(fields: [order_id], references: [id])
+  item  MenuItem @relation(fields: [item_id], references: [id])
+
+  @@map("order_items")
+}
+
+model OrderStatusHistory {
+  id         String      @id @default(uuid())
+  order_id   String
+  status     OrderStatus
+  changed_at DateTime    @default(now())
+  changed_by String?
+
+  order Order @relation(fields: [order_id], references: [id])
+
+  @@map("order_status_history")
+}
+
+// ========== PAYMENTS ==========
+
+model Payment {
+  id                  String        @id @default(uuid())
+  order_id            String        @unique
+  amount              Decimal       @db.Decimal(10, 2)
+  payment_method      PaymentMethod
+  status              PaymentStatus @default(PENDING)
+  razorpay_order_id   String?
+  razorpay_payment_id String?
+  amount_received     Decimal?      @db.Decimal(10, 2)
+  change_given        Decimal?      @db.Decimal(10, 2)
+  confirmed_by        String?
+  confirmed_at        DateTime?
+  created_at          DateTime      @default(now())
+
+  order Order @relation(fields: [order_id], references: [id])
+
+  @@map("payments")
+}
+
+enum PaymentMethod {
+  RAZORPAY
+  CASH
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model CashPayment {
+  id              String   @id @default(uuid())
+  payment_id      String
+  order_id        String
+  amount_received Decimal  @db.Decimal(10, 2)
+  change_given    Decimal  @db.Decimal(10, 2)
+  collected_by    String
+  timestamp       DateTime @default(now())
+
+  @@map("cash_payments")
+}
+
+// ========== INVENTORY ==========
+
+model Inventory {
+  id            String   @id @default(uuid())
+  tenant_id     String
+  item_name     String
+  category      String
+  quantity      Decimal  @db.Decimal(10, 3)
+  unit          String
+  reorder_level Decimal  @db.Decimal(10, 3)
+  cost_price    Decimal? @db.Decimal(10, 2)
+  expiry_date   DateTime?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  tenant             Tenant                  @relation(fields: [tenant_id], references: [id])
+  recipe_ingredients RecipeIngredient[]
+
+  @@unique([tenant_id, item_name])
+  @@index([tenant_id, quantity, reorder_level])
+  @@map("inventory")
+}
+
+model RecipeIngredient {
+  id                String  @id @default(uuid())
+  tenant_id         String
+  menu_item_id      String
+  ingredient_id     String
+  quantity_required Decimal @db.Decimal(10, 3)
+  unit              String
+  created_at        DateTime @default(now())
+
+  menu_item  MenuItem  @relation(fields: [menu_item_id], references: [id])
+  ingredient Inventory @relation(fields: [ingredient_id], references: [id])
+
+  @@map("recipe_ingredients")
+}
+
+model InventoryAdjustment {
+  id           String   @id @default(uuid())
+  tenant_id    String
+  item_id      String
+  item_name    String
+  old_quantity Decimal  @db.Decimal(10, 3)
+  new_quantity Decimal  @db.Decimal(10, 3)
+  reason       String
+  adjusted_by  String
+  timestamp    DateTime @default(now())
+
+  @@map("inventory_adjustments")
+}
+
+// ========== DISCOUNT ENGINE ==========
+
+model PricingRule {
+  id         String   @id @default(uuid())
+  tenant_id  String
+  name       String
+  conditions Json
+  action     Json
+  auto_apply Boolean  @default(false)
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenant_id], references: [id])
+
+  @@map("pricing_rules")
+}
+
+model DiscountSuggestion {
+  id                 String   @id @default(uuid())
+  tenant_id          String
+  item_id            String
+  suggested_discount Int
+  suggested_price    Decimal  @db.Decimal(10, 2)
+  reason             String
+  confidence         Decimal  @db.Decimal(3, 2)
+  source             String
+  status             String   @default("PENDING")
+  created_at         DateTime @default(now())
+  expires_at         DateTime
+
+  @@index([tenant_id, status, expires_at])
+  @@map("discount_suggestions")
+}
+
+model MlPrediction {
+  id                String   @id @default(uuid())
+  tenant_id         String
+  item_id           String
+  predicted_discount Int
+  confidence        Decimal  @db.Decimal(3, 2)
+  features_used     Json
+  model_version     String
+  created_at        DateTime @default(now())
+
+  @@map("ml_predictions")
+}
+
+// ========== ANALYTICS ==========
+
+model OrderHistory {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  order_id    String
+  customer_id String
+  items       Json
+  subtotal    Decimal  @db.Decimal(10, 2)
+  total       Decimal  @db.Decimal(10, 2)
+  timestamp   DateTime @default(now())
+
+  @@index([tenant_id, timestamp])
+  @@map("order_history")
+}
+
+model DailyMetrics {
+  id               String   @id @default(uuid())
+  tenant_id        String
+  date             DateTime @db.Date
+  total_orders     Int      @default(0)
+  total_revenue    Decimal  @db.Decimal(10, 2) @default(0)
+  avg_order_value  Decimal  @db.Decimal(10, 2) @default(0)
+
+  @@unique([tenant_id, date])
+  @@map("daily_metrics")
+}
+

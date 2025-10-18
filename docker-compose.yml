@@ -1,0 +1,258 @@
+services:
+  # PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: intellidine-postgres
+    environment:
+      POSTGRES_DB: intellidine
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - intellidine-network
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: intellidine-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - intellidine-network
+
+  # Kafka & Zookeeper
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: intellidine-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    networks:
+      - intellidine-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: intellidine-kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+    networks:
+      - intellidine-network
+
+  # API Gateway
+  api-gateway:
+    container_name: intellidine-api-gateway
+    build:
+      context: ./backend
+      dockerfile: ./api-gateway/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://admin:${DB_PASSWORD}@postgres:5432/intellidine
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKER=kafka:9092
+      - NODE_ENV=development
+      - AUTH_MODE=${AUTH_MODE:-header}
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      kafka:
+        condition: service_started
+    networks:
+      - intellidine-network
+    restart: unless-stopped
+
+  # Auth Service
+  auth-service:
+    container_name: intellidine-auth-service
+    build: ./backend/auth-service
+    ports:
+      - "3001:3001"
+    environment:
+      - DATABASE_URL=postgresql://admin:${DB_PASSWORD}@postgres:5432/intellidine
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - MSG91_AUTH_KEY=${MSG91_AUTH_KEY}
+      - NODE_ENV=development
+      - PORT=3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - intellidine-network
+    restart: unless-stopped
+
+  # Order Service
+  order-service:
+    container_name: intellidine-order-service
+    build: ./backend/order-service
+    ports:
+      - "3002:3002"
+    environment:
+      - DATABASE_URL=postgresql://admin:${DB_PASSWORD}@postgres:5432/intellidine
+      - KAFKA_BROKER=kafka:9092
+      - NODE_ENV=development
+      - PORT=3002
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - intellidine-network
+    restart: unless-stopped
+
+  # Menu Service
+  menu-service:
+    container_name: intellidine-menu-service
+    build: ./backend/menu-service
+    ports:
+      - "3003:3003"
+    environment:
+      - DATABASE_URL=postgresql://admin:${DB_PASSWORD}@postgres:5432/intellidine
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=development
+      - PORT=3003
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - intellidine-network
+    restart: unless-stopped
+
+  # Payment Service
+  payment-service:
+    container_name: intellidine-payment-service
+    build: ./backend/payment-service
+    ports:
+      - "3005:3005"
+    environment:
+      - DATABASE_URL=postgresql://admin:${DB_PASSWORD}@postgres:5432/intellidine
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+      - NODE_ENV=development
+      - PORT=3005
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - intellidine-network
+    restart: unless-stopped
+
+  # ML Service
+  ml-service:
+    container_name: intellidine-ml-service
+    build: ./backend/ml-service
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/ml-service/models:/app/models
+    networks:
+      - intellidine-network
+    restart: unless-stopped
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: intellidine-prometheus
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - intellidine-network
+    restart: unless-stopped
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: intellidine-grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3004:3000"
+    networks:
+      - intellidine-network
+    restart: unless-stopped
+
+  # Notification Service
+  notification-service:
+    container_name: intellidine-notification-service
+    build: ./backend/notification-service
+    ports:
+      - "3006:3006"
+    networks:
+      - intellidine-network
+    restart: unless-stopped
+
+  # Analytics Service
+  analytics-service:
+    container_name: intellidine-analytics-service
+    build: ./backend/analytics-service
+    ports:
+      - "3007:3007"
+    networks:
+      - intellidine-network
+    restart: unless-stopped
+
+  # Discount Engine
+  discount-engine:
+    container_name: intellidine-discount-engine
+    build: ./backend/discount-engine
+    ports:
+      - "3008:3008"
+    networks:
+      - intellidine-network
+    restart: unless-stopped
+
+
+  # Nginx Reverse Proxy
+  nginx:
+    container_name: intellidine-nginx
+    build: ./infrastructure/nginx
+    ports:
+      - "80:80"
+      # - "443:443" # enable after TLS
+    depends_on:
+      - api-gateway
+      # - frontend # add when frontend is added
+    networks:
+      - intellidine-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  intellidine-network:
+    driver: bridge
+
