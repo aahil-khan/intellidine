@@ -87,12 +87,23 @@
 
 ---
 
-## ⚪ PHASE 2: ADDITIONAL SERVICES (NOT YET STARTED)
+## ⚪ PHASE 2: ADDITIONAL SERVICES (IN PROGRESS)
 
 ### Medium Priority
-4. **Payment Service**
-   - [ ] Razorpay order creation
-   - [ ] Cash payment confirmation
+4. **Payment Service** ✅ COMPLETE (Oct 19, 2 hours)
+   - [x] Razorpay order creation (mocked - no real API calls)
+   - [x] Cash payment confirmation
+   - [x] Payment status tracking
+   - [x] Kafka event publishing (payment.created, payment.completed, payment.failed, payment.refund)
+   - [x] Payment statistics/analytics
+   - [x] All endpoints tested and working ✓
+   - **Time: 2 hours | Status: DONE**
+   - **Endpoints**: 
+     - POST /api/payments/create-razorpay-order ✅ 200 OK
+     - POST /api/payments/verify-razorpay ✅ 200 OK (mock signature verification)
+     - POST /api/payments/confirm-cash ✅ 200 OK
+     - GET /api/payments/:id ✅ 200 OK
+     - GET /api/payments ✅ 200 OK (with pagination)
 
 5. **Inventory Service**
    - [ ] Auto-deduction on order
@@ -113,13 +124,16 @@
 
 ## 📊 CURRENT METRICS
 
-**Project Progress**: 22% → **37%** (Auth + Menu + Order complete)
-**Sprint 1 Progress**: 1.5/7 days elapsed, 3/4 steps complete (75%)
-**Velocity**: 
+**Project Progress**: 22% → 37% → **40%** (Auth + Menu + Order + Payment complete)
+**Sprint 1 Progress**: 1.5/7 days elapsed, 4/4 steps complete ✅ (100%)
+**Sprint 2 Progress**: 0/4 steps complete (0% - just starting)
+**Velocity**:
 - Auth Service: 11 files, ~1,200 LOC in 6 hours (200 LOC/hr)
 - Menu Service: 7 files, ~600 LOC in 9 hours (67 LOC/hr)
 - Order Service: 12 files, ~1,200 LOC in 3 hours (400 LOC/hr)
-- **Estimated Sprint 1 completion**: Oct 20 (5 days ahead of schedule)
+- Payment Service: 6 files, ~450 LOC in 2 hours (225 LOC/hr)
+- **Average velocity: 223 LOC/hr**
+- **Estimated Sprint 1 completion**: Oct 20 (5 days ahead of schedule) ✅
 
 ---
 
