@@ -171,6 +171,28 @@ services:
       - intellidine-network
     restart: unless-stopped
 
+  # Inventory Service
+  inventory-service:
+    container_name: intellidine-inventory-service
+    build:
+      context: ./backend
+      dockerfile: ./inventory-service/Dockerfile
+    ports:
+      - "3010:3004"
+    environment:
+      - DATABASE_URL=postgresql://admin:${DB_PASSWORD}@postgres:5432/intellidine
+      - KAFKA_BROKER=kafka:9092
+      - NODE_ENV=development
+      - PORT=3004
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - intellidine-network
+    restart: unless-stopped
+
   # ML Service
   ml-service:
     container_name: intellidine-ml-service
@@ -205,7 +227,7 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
     ports:
-      - "3004:3000"
+      - "3009:3000"
     networks:
       - intellidine-network
     restart: unless-stopped

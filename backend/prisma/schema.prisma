@@ -310,6 +310,19 @@ model InventoryAdjustment {
   @@map("inventory_adjustments")
 }
 
+model ReorderAlert {
+  id               String   @id @default(uuid())
+  tenant_id        String
+  inventory_id     String
+  current_quantity Decimal  @db.Decimal(10, 3)
+  alert_status     String   @default("WARNING")
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  @@index([tenant_id, alert_status])
+  @@map("reorder_alerts")
+}
+
 // ========== DISCOUNT ENGINE ==========
 
 model PricingRule {
