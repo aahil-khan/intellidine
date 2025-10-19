@@ -1,17 +1,29 @@
 FROM node:20-alpine AS build
 WORKDIR /app
-COPY package.json package-lock.json* .npmrc* ./
-RUN npm ci || npm i
-COPY tsconfig.json ./tsconfig.json
-COPY src ./src
+RUN apk add --no-cache python3 make g++ openssl openssl-dev
+
+# Separate COPY statements for flexibility
+COPY notification-service/package.json ./
+COPY notification-service/package-lock.json* ./
+COPY notification-service/.npmrc* ./
+RUN npm install
+
+# Copy source files
+COPY notification-service/tsconfig.json ./tsconfig.json
+COPY notification-service/src ./src
+COPY shared ./shared
+
+# Build
 RUN npx nest build || npm run build
 
+# Runtime stage
 FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production
+RUN apk add --no-cache openssl
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 EXPOSE 3006
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]
 
