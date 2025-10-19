@@ -5,7 +5,7 @@ import { PaymentProducer } from './kafka/payment.producer';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { ConfirmCashPaymentDto, PaymentStatus } from './dto/confirm-cash-payment.dto';
 import { VerifyRazorpayDto } from './dto/verify-razorpay.dto';
-import { JwtGuard, TenantGuard, RequireRole } from '../shared/auth';
+import { JwtGuard, TenantGuard, RequireRole } from '@shared/auth';
 
 @Controller('api/payments')
 export class AppController {

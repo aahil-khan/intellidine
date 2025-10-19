@@ -3,7 +3,7 @@ import { OrderService } from './services/order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { ListOrdersQueryDto } from './dto/list-orders.dto';
-import { JwtGuard, TenantGuard, RequireRole } from '../shared/auth';
+import { JwtGuard, TenantGuard, RequireRole } from '@shared/auth';
 
 @Controller()
 export class AppController {

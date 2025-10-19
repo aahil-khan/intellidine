@@ -3,7 +3,7 @@ import { InventoryService } from './services/inventory.service';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
 import { DeductInventoryDto } from './dto/deduct-inventory.dto';
-import { JwtGuard, TenantGuard, RequireRole } from '../shared/auth';
+import { JwtGuard, TenantGuard, RequireRole } from '@shared/auth';
 
 @Controller('/api/inventory')
 export class AppController {

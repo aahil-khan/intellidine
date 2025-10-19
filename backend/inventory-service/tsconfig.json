@@ -12,8 +12,12 @@
     "baseUrl": ".",
     "strict": false,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@shared/*": ["./shared/*"]
+    }
   },
+  "include": ["src/**/*", "shared/**/*"],
   "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
 }
 

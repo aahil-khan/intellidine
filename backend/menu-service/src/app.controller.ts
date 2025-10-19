@@ -4,7 +4,7 @@ import { CreateMenuItemDto } from './dto/create-menu-item.dto';
 import { UpdateMenuItemDto } from './dto/update-menu-item.dto';
 import { GetMenuQueryDto } from './dto/get-menu-query.dto';
 import { MenuResponseDto, MenuItemResponseDto } from './dto/menu-response.dto';
-import { JwtGuard, TenantGuard, RequireRole } from '../shared/auth';
+import { JwtGuard, TenantGuard, RequireRole } from '@shared/auth';
 
 @Controller()
 export class AppController {

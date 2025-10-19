@@ -10,8 +10,13 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": ".",
-    "strict": true
+    "strict": false,
+    "skipLibCheck": true,
+    "paths": {
+      "@shared/*": ["./shared/*"]
+    }
   },
+  "include": ["src/**/*", "shared/**/*"],
   "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
 }
 

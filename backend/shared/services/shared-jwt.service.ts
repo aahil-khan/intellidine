@@ -8,6 +8,8 @@ import * as jwt from 'jsonwebtoken';
  * Usage:
  * - Verify tokens: jwtService.verify(token)
  * - Generate tokens: jwtService.sign(payload)
+ * 
+ * @deprecated Use JwtUtils from @shared/auth instead
  */
 @Injectable()
 export class SharedJwtService {
@@ -21,7 +23,7 @@ export class SharedJwtService {
     try {
       const decoded = jwt.verify(token, this.secret, {
         algorithms: ['HS256'],
-      });
+      }) as any;
       this.logger.debug(`✓ Token verified for user: ${decoded.userId || decoded.sub}`);
       return decoded;
     } catch (error: any) {
@@ -35,10 +37,10 @@ export class SharedJwtService {
    */
   sign(payload: any, expiresIn: string = '24h'): string {
     try {
-      const token = jwt.sign(payload, this.secret, {
-        algorithm: 'HS256',
+      const token = jwt.sign(payload, this.secret as string, {
+        algorithm: 'HS256' as const,
         expiresIn,
-      });
+      } as any);
       this.logger.debug(`✓ Token generated for user: ${payload.userId || payload.sub}`);
       return token;
     } catch (error: any) {
