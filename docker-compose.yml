@@ -84,7 +84,9 @@ services:
   # Auth Service
   auth-service:
     container_name: intellidine-auth-service
-    build: ./backend/auth-service
+    build:
+      context: ./backend
+      dockerfile: ./auth-service/Dockerfile
     ports:
       - "3001:3001"
     environment:
@@ -104,9 +106,12 @@ services:
     restart: unless-stopped
 
   # Order Service
+  # Order Service
   order-service:
     container_name: intellidine-order-service
-    build: ./backend/order-service
+    build:
+      context: ./backend
+      dockerfile: ./order-service/Dockerfile
     ports:
       - "3002:3002"
     environment:
@@ -126,7 +131,9 @@ services:
   # Menu Service
   menu-service:
     container_name: intellidine-menu-service
-    build: ./backend/menu-service
+    build:
+      context: ./backend
+      dockerfile: ./menu-service/Dockerfile
     ports:
       - "3003:3003"
     environment:
