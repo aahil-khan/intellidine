@@ -153,7 +153,9 @@ services:
   # Payment Service
   payment-service:
     container_name: intellidine-payment-service
-    build: ./backend/payment-service
+    build:
+      context: ./backend
+      dockerfile: ./payment-service/Dockerfile
     ports:
       - "3005:3005"
     environment:
