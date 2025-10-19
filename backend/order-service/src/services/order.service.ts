@@ -13,13 +13,13 @@ export class OrderService {
 
   // Order status state machine: valid status transitions
   private readonly statusTransitions: Record<string, string[]> = {
-    PENDING: ['CONFIRMED', 'CANCELLED'],
-    CONFIRMED: ['PREPARING', 'CANCELLED'],
-    PREPARING: ['READY'],
+    PENDING: ['PREPARING', 'CANCELLED'],
+    PREPARING: ['READY', 'CANCELLED'],
     READY: ['SERVED', 'CANCELLED'],
     SERVED: ['COMPLETED', 'CANCELLED'],
     COMPLETED: [],
     CANCELLED: [],
+    AWAITING_CASH_PAYMENT: ['COMPLETED', 'CANCELLED'],
   };
 
   constructor(
@@ -87,12 +87,33 @@ export class OrderService {
       const gstAmount = new Decimal(subtotal).times(0.18);
       const total = new Decimal(subtotal).plus(gstAmount);
 
+      // Validate or get customer ID
+      let customerId = createOrderDto.customer_id;
+      if (!customerId) {
+        // Create a walk-in customer for anonymous orders
+        const walkInCustomer = await this.prismaService.customer.create({
+          data: {
+            phone_number: `walk-in-${Date.now()}`,
+            name: 'Walk-in Customer',
+          },
+        });
+        customerId = walkInCustomer.id;
+      } else {
+        // Verify customer exists
+        const customer = await this.prismaService.customer.findUnique({
+          where: { id: customerId },
+        });
+        if (!customer) {
+          throw new BadRequestException('Invalid customer ID');
+        }
+      }
+
       // Create order in database
       const order = await this.prismaService.order.create({
         data: {
           tenant_id: tenantId,
           table_number: parseInt(createOrderDto.table_id),
-          customer_id: createOrderDto.customer_id || tenantId, // Use tenant_id as placeholder for walk-in
+          customer_id: customerId,
           status: 'PENDING',
           subtotal: new Decimal(subtotal),
           gst: gstAmount,
@@ -245,22 +266,22 @@ export class OrderService {
     }
 
     // Validate status transition
+    const newStatusStr = updateStatusDto.status?.toUpperCase();
     const validTransitions = this.statusTransitions[order.status] || [];
-    if (!validTransitions.includes(updateStatusDto.status as any)) {
+    if (!validTransitions.includes(newStatusStr)) {
       throw new BadRequestException(
-        `Invalid status transition: ${order.status} -> ${updateStatusDto.status}. Valid transitions: ${validTransitions.join(', ')}`,
+        `Invalid status transition: ${order.status} -> ${newStatusStr}. Valid transitions: ${validTransitions.join(', ')}`,
       );
     }
 
     const oldStatus = order.status;
-    const newStatus = updateStatusDto.status as any;
 
-    // Update order with new status
+    // Update order with new status (using string directly - Prisma will validate)
     const updatedOrder = await this.prismaService.order.update({
       where: { id: orderId },
       data: {
-        status: newStatus,
-      },
+        status: newStatusStr,
+      } as any,
       include: {
         items: {
           include: {
@@ -271,19 +292,19 @@ export class OrderService {
     });
 
     // Publish status changed event
-    await this.kafkaProducerService.publishOrderStatusChanged(orderId, tenantId, oldStatus, newStatus, {
+    await this.kafkaProducerService.publishOrderStatusChanged(orderId, tenantId, oldStatus, newStatusStr, {
       notes: updateStatusDto.notes,
       estimatedTimeRemaining: updateStatusDto.estimated_time_remaining,
     });
 
     // Publish completion event if order is completed or cancelled
-    if (['COMPLETED', 'CANCELLED'].includes(newStatus)) {
-      await this.kafkaProducerService.publishOrderCompleted(orderId, tenantId, newStatus, {
+    if (['COMPLETED', 'CANCELLED'].includes(newStatusStr)) {
+      await this.kafkaProducerService.publishOrderCompleted(orderId, tenantId, newStatusStr, {
         totalAmount: updatedOrder.total.toString(),
       });
     }
 
-    this.logger.log(`Order ${orderId} status updated: ${oldStatus} -> ${newStatus}`);
+    this.logger.log(`Order ${orderId} status updated: ${oldStatus} -> ${newStatusStr}`);
     return this.mapOrderToResponse(updatedOrder);
   }
 
