@@ -1,8 +1,9 @@
-import { Controller, Post, Get, Patch, Body, Param, Query, Logger } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Body, Param, Query, Logger, UseGuards } from '@nestjs/common';
 import { InventoryService } from './services/inventory.service';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
 import { UpdateInventoryDto } from './dto/update-inventory.dto';
 import { DeductInventoryDto } from './dto/deduct-inventory.dto';
+import { JwtGuard, TenantGuard, RequireRole } from '../shared/auth';
 
 @Controller('/api/inventory')
 export class AppController {
@@ -23,9 +24,13 @@ export class AppController {
   }
 
   /**
-   * Create Inventory Item
-   * POST /api/inventory/items
+   * Create Inventory Item (staff only)
+   * POST /api/inventory/items?tenant_id=...
+   * Headers: Authorization: Bearer <token>
+   * Auth: REQUIRED (JWT + Staff role + Tenant validation)
    */
+  @UseGuards(JwtGuard, TenantGuard)
+  @RequireRole(['staff'])
   @Post('/items')
   async createInventory(@Body() createInventoryDto: CreateInventoryDto) {
     this.logger.log(`📦 Creating inventory item: ${createInventoryDto.item_name}`);
@@ -84,9 +89,12 @@ export class AppController {
   }
 
   /**
-   * List Inventory Items
+   * List Inventory Items (auth required)
    * GET /api/inventory/items?tenant_id=XXX&limit=20&offset=0
+   * Headers: Authorization: Bearer <token>
+   * Auth: REQUIRED (JWT + Tenant validation)
    */
+  @UseGuards(JwtGuard, TenantGuard)
   @Get('/items')
   async listInventory(
     @Query('tenant_id') tenantId: string,
@@ -118,9 +126,13 @@ export class AppController {
   }
 
   /**
-   * Update Inventory Item
-   * PATCH /api/inventory/items/:id
+   * Update Inventory Item (staff only)
+   * PATCH /api/inventory/items/:id?tenant_id=...
+   * Headers: Authorization: Bearer <token>
+   * Auth: REQUIRED (JWT + Staff role + Tenant validation)
    */
+  @UseGuards(JwtGuard, TenantGuard)
+  @RequireRole(['staff'])
   @Patch('/items/:id')
   async updateInventory(
     @Param('id') id: string,
@@ -148,9 +160,13 @@ export class AppController {
   }
 
   /**
-   * Deduct Inventory (Manual)
-   * PATCH /api/inventory/deduct
+   * Deduct Inventory (staff only)
+   * PATCH /api/inventory/deduct?tenant_id=...
+   * Headers: Authorization: Bearer <token>
+   * Auth: REQUIRED (JWT + Staff role + Tenant validation)
    */
+  @UseGuards(JwtGuard, TenantGuard)
+  @RequireRole(['staff'])
   @Patch('/deduct')
   async deductInventory(@Body() deductInventoryDto: DeductInventoryDto) {
     this.logger.log(`📦 Deducting inventory: ${deductInventoryDto.quantity} units`);
@@ -178,9 +194,13 @@ export class AppController {
   }
 
   /**
-   * Get Reorder Alerts
+   * Get Reorder Alerts (staff only)
    * GET /api/inventory/alerts?tenant_id=XXX
+   * Headers: Authorization: Bearer <token>
+   * Auth: REQUIRED (JWT + Staff role + Tenant validation)
    */
+  @UseGuards(JwtGuard, TenantGuard)
+  @RequireRole(['staff'])
   @Get('/alerts')
   async getReorderAlerts(@Query('tenant_id') tenantId: string) {
     this.logger.log(`🚨 Fetching reorder alerts for tenant: ${tenantId}`);
@@ -208,9 +228,13 @@ export class AppController {
   }
 
   /**
-   * Get Inventory Statistics
+   * Get Inventory Statistics (staff only)
    * GET /api/inventory/stats?tenant_id=XXX
+   * Headers: Authorization: Bearer <token>
+   * Auth: REQUIRED (JWT + Staff role + Tenant validation)
    */
+  @UseGuards(JwtGuard, TenantGuard)
+  @RequireRole(['staff'])
   @Get('/stats')
   async getInventoryStats(@Query('tenant_id') tenantId: string) {
     this.logger.log(`📊 Fetching inventory stats for tenant: ${tenantId}`);

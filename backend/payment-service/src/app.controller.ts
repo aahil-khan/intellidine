@@ -1,13 +1,16 @@
-import { Controller, Post, Get, Param, Body, Query, HttpCode } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Param, Body, Query, HttpCode, UseGuards, Logger } from '@nestjs/common';
 import { PaymentService, PaymentMethod } from './services/payment.service';
 import { RazorpayService } from './services/razorpay.service';
 import { PaymentProducer } from './kafka/payment.producer';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { ConfirmCashPaymentDto, PaymentStatus } from './dto/confirm-cash-payment.dto';
 import { VerifyRazorpayDto } from './dto/verify-razorpay.dto';
+import { JwtGuard, TenantGuard, RequireRole } from '../shared/auth';
 
 @Controller('api/payments')
 export class AppController {
+  private readonly logger = new Logger(AppController.name);
+
   constructor(
     private paymentService: PaymentService,
     private razorpayService: RazorpayService,
@@ -16,12 +19,14 @@ export class AppController {
 
   /**
    * POST /api/payments/create-razorpay-order
-   * Create a Razorpay order for payment
+   * Create a Razorpay order for payment (auth required)
+   * Headers: Authorization: Bearer <token>
    * Returns mock Razorpay order details (in production, this calls Razorpay API)
    */
+  @UseGuards(JwtGuard, TenantGuard)
   @Post('create-razorpay-order')
   @HttpCode(200)
-  async createRazorpayOrder(@Body() createPaymentDto: CreatePaymentDto) {
+  async createRazorpayOrder(@Body() createPaymentDto: CreatePaymentDto, @Query('tenant_id') tenantId: string) {
     // Validate inputs
     if (!createPaymentDto.order_id || !createPaymentDto.amount) {
       return {
@@ -75,13 +80,15 @@ export class AppController {
 
   /**
    * POST /api/payments/verify-razorpay
-   * Verify Razorpay payment signature
+   * Verify Razorpay payment signature (auth required)
+   * Headers: Authorization: Bearer <token>
    * In production: verifies HMAC_SHA256(order_id|payment_id, secret) === signature
    * For testing: accepts any signature
    */
+  @UseGuards(JwtGuard, TenantGuard)
   @Post('verify-razorpay')
   @HttpCode(200)
-  async verifyRazorpay(@Body() verifyDto: VerifyRazorpayDto) {
+  async verifyRazorpay(@Body() verifyDto: VerifyRazorpayDto, @Query('tenant_id') tenantId: string) {
     // Validate inputs
     if (!verifyDto.razorpay_order_id || !verifyDto.razorpay_payment_id || !verifyDto.razorpay_signature) {
       return {
@@ -152,11 +159,15 @@ export class AppController {
 
   /**
    * POST /api/payments/confirm-cash
-   * Confirm cash payment (waiter confirms payment at table)
+   * Confirm cash payment (waiter confirms payment at table, staff only)
+   * Headers: Authorization: Bearer <token>
+   * Auth: REQUIRED (JWT + Staff role + Tenant validation)
    */
+  @UseGuards(JwtGuard, TenantGuard)
+  @RequireRole(['staff'])
   @Post('confirm-cash')
   @HttpCode(200)
-  async confirmCashPayment(@Body() confirmDto: ConfirmCashPaymentDto) {
+  async confirmCashPayment(@Body() confirmDto: ConfirmCashPaymentDto, @Query('tenant_id') tenantId: string) {
     // Validate inputs
     if (!confirmDto.order_id || !confirmDto.confirmed_by) {
       return {
@@ -204,11 +215,16 @@ export class AppController {
 
   /**
    * GET /api/payments/stats/daily
-   * Get payment statistics for a date range (for analytics)
+   * Get payment statistics for a date range (auth required, staff only)
+   * Headers: Authorization: Bearer <token>
+   * Auth: REQUIRED (JWT + Staff role + Tenant validation)
    */
+  @UseGuards(JwtGuard, TenantGuard)
+  @RequireRole(['staff'])
   @Get('stats/daily')
   async getPaymentStats(
     @Query('date') date?: string, // YYYY-MM-DD format
+    @Query('tenant_id') tenantId?: string,
   ) {
     const targetDate = date ? new Date(date) : new Date();
     const startDate = new Date(targetDate.setHours(0, 0, 0, 0));
@@ -227,16 +243,13 @@ export class AppController {
 
   /**
    * GET /api/payments/:payment_id
-   * Get payment details
+   * Get payment details (auth required)
+   * Headers: Authorization: Bearer <token>
+   * Auth: REQUIRED (JWT + Tenant validation)
    */
+  @UseGuards(JwtGuard, TenantGuard)
   @Get(':payment_id')
-  async getPayment(@Param('payment_id') paymentId: string) {
-    if (!paymentId) {
-      return {
-        status: 'error',
-        message: 'payment_id is required',
-      };
-    }
+  async getPayment(@Param('payment_id') paymentId: string, @Query('tenant_id') tenantId: string) {
 
     const payment = await this.paymentService.getPaymentById(paymentId);
 
