@@ -12,8 +12,8 @@ COPY prisma ./prisma
 COPY api-gateway/src ./src
 COPY shared ./shared
 
-RUN npx prisma generate --skip-engine-check 2>&1 | tail -5 || echo "Prisma done"
-RUN npx nest build 2>&1 | tail -20 || npm run build 2>&1 | tail -20
+RUN npx prisma generate --skip-engine-check 2>&1 | tail -5
+RUN npx nest build
 
 # Runtime stage
 FROM node:20-alpine

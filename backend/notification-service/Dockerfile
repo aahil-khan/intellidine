@@ -11,7 +11,7 @@ COPY notification-service/tsconfig.json ./tsconfig.json
 COPY notification-service/src ./src
 COPY shared ./shared
 
-RUN npx nest build 2>&1 | tail -20 || npm run build 2>&1 | tail -20
+RUN npx nest build
 
 # Runtime stage
 FROM node:20-alpine

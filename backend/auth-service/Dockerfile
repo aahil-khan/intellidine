@@ -6,8 +6,8 @@ RUN npm ci --legacy-peer-deps 2>&1 | tail -5 || npm i --legacy-peer-deps 2>&1 | 
 COPY auth-service/tsconfig.json ./tsconfig.json
 COPY auth-service/src ./src
 COPY prisma ./prisma
-RUN npx prisma generate --skip-engine-check 2>&1 | tail -5 || npm run build || echo "Build completed"
-RUN npx nest build 2>&1 | tail -20 || npm run build 2>&1 | tail -20 || echo "Build completed"
+RUN npx prisma generate --skip-engine-check 2>&1 | tail -5
+RUN npx nest build
 
 FROM node:20-alpine
 WORKDIR /app

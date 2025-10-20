@@ -8,8 +8,8 @@ COPY order-service/tsconfig.json ./tsconfig.json
 COPY order-service/src ./src
 COPY shared ./shared
 COPY prisma ./prisma
-RUN npx prisma generate --skip-engine-check 2>&1 | tail -5 || echo "Prisma done"
-RUN npx nest build 2>&1 | tail -20 || npm run build 2>&1 | tail -20
+RUN npx prisma generate --skip-engine-check 2>&1 | tail -5
+RUN npx nest build
 
 FROM node:20-alpine
 WORKDIR /app
