@@ -1,8 +1,9 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { Kafka, Producer } from 'kafkajs';
 
 @Injectable()
 export class PaymentProducer implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(PaymentProducer.name);
   private kafka: Kafka;
   private producer: Producer;
 
@@ -14,7 +15,7 @@ export class PaymentProducer implements OnModuleInit, OnModuleDestroy {
 
     this.producer = this.kafka.producer();
     await this.producer.connect();
-    console.log('✓ Kafka Producer (Payment Service) connected');
+    this.logger.log('✓ Kafka Producer (Payment Service) connected');
   }
 
   async onModuleDestroy() {
@@ -41,7 +42,7 @@ export class PaymentProducer implements OnModuleInit, OnModuleDestroy {
       ],
     });
 
-    console.log(`[Kafka] Published payment.created: ${paymentData.payment_id}`);
+    this.logger.log(`[Kafka] Published payment.created: ${paymentData.payment_id}`);
   }
 
   // Publish payment.completed event (triggers order status update & inventory deduction)
@@ -64,7 +65,7 @@ export class PaymentProducer implements OnModuleInit, OnModuleDestroy {
       ],
     });
 
-    console.log(`[Kafka] Published payment.completed: ${paymentData.payment_id}`);
+    this.logger.log(`[Kafka] Published payment.completed: ${paymentData.payment_id}`);
   }
 
   // Publish payment.failed event
@@ -85,7 +86,7 @@ export class PaymentProducer implements OnModuleInit, OnModuleDestroy {
       ],
     });
 
-    console.log(`[Kafka] Published payment.failed: ${paymentData.payment_id}`);
+    this.logger.log(`[Kafka] Published payment.failed: ${paymentData.payment_id}`);
   }
 
   // Publish payment.refund event
@@ -107,6 +108,6 @@ export class PaymentProducer implements OnModuleInit, OnModuleDestroy {
       ],
     });
 
-    console.log(`[Kafka] Published payment.refund: ${paymentData.payment_id}`);
+    this.logger.log(`[Kafka] Published payment.refund: ${paymentData.payment_id}`);
   }
 }

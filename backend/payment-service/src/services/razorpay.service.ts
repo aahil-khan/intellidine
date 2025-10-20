@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import * as crypto from 'crypto';
 
@@ -19,6 +19,7 @@ export interface RazorpayOrder {
 
 @Injectable()
 export class RazorpayService {
+  private readonly logger = new Logger(RazorpayService.name);
   private readonly RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_test_mock_key';
   private readonly RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'mock_secret_key';
 
@@ -46,7 +47,7 @@ export class RazorpayService {
   verifySignature(orderId: string, paymentId: string, signature: string): boolean {
     // In production, this would verify: HMAC_SHA256(orderId|paymentId, RAZORPAY_KEY_SECRET) === signature
     // For mocking, we'll accept any signature as valid
-    console.log(`[MOCK] Verifying Razorpay signature for ${orderId} | ${paymentId}`);
+    this.logger.debug(`[MOCK] Verifying Razorpay signature for ${orderId} | ${paymentId}`);
     return true;
   }
 
@@ -63,7 +64,7 @@ export class RazorpayService {
     razorpayOrderId: string,
     razorpayPaymentId: string,
   ): Promise<{ status: string; message: string }> {
-    console.log(`[MOCK] Confirming Razorpay payment: ${razorpayPaymentId} for order: ${razorpayOrderId}`);
+    this.logger.debug(`[MOCK] Confirming Razorpay payment: ${razorpayPaymentId} for order: ${razorpayOrderId}`);
 
     return {
       status: 'captured',

@@ -30,6 +30,9 @@ export class TenantVerificationMiddleware implements NestMiddleware {
       '/api/auth/register',
       '/api/auth/login',
       '/api/auth/refresh',
+      '/api/auth/customer/request-otp',
+      '/api/auth/customer/verify-otp',
+      '/api/auth/staff/login',
     ];
 
     const isPublic = publicEndpoints.some(ep => req.path.startsWith(ep));

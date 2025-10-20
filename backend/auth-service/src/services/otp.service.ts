@@ -31,11 +31,13 @@ export class OtpService {
       // Generate 6-digit OTP
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       const otpHash = await bcrypt.hash(otp, 10);
-      const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+      // In development, use 1 hour TTL for testing; in production use 5 minutes
+      const ttlSeconds = process.env.NODE_ENV === 'production' ? 300 : 3600;
+      const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
 
-      // Store OTP in Redis with 5-minute TTL
+      // Store OTP in Redis with configurable TTL
       const redisKey = `otp:${phone}`;
-      await this.redis.setEx(redisKey, 300, JSON.stringify({ otpHash, expiresAt: expiresAt.toISOString() }));
+      await this.redis.setEx(redisKey, ttlSeconds, JSON.stringify({ otpHash, expiresAt: expiresAt.toISOString() }));
 
       // Store in database for audit trail
       await this.prisma.otpVerification.create({
@@ -53,6 +55,8 @@ export class OtpService {
       return {
         message: 'OTP sent successfully',
         expires_at: expiresAt.toISOString(),
+        // Return OTP only in development for testing
+        ...(process.env.NODE_ENV !== 'production' && { otp }),
       };
     } catch (error) {
       this.logger.error(`Error requesting OTP for ${phone}:`, error);

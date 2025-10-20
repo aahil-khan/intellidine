@@ -28,7 +28,7 @@
     },
     {
       "key": "otp_code",
-      "value": "123456",
+      "value": "213649",
       "type": "string"
     },
     {
@@ -67,9 +67,14 @@
                   "pm.test('Status code is 200', function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test('Response has success flag', function () {",
+                  "pm.test('Response has message', function () {",
                   "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('message');",
+                  "    pm.expect(jsonData.data.message).to.include('OTP sent');",
+                  "    // Save OTP for next request (if available in development)",
+                  "    if (jsonData.data.otp) {",
+                  "        pm.environment.set('otp_code', jsonData.data.otp);",
+                  "    }",
                   "});"
                 ]
               }
@@ -118,9 +123,9 @@
                   "});",
                   "pm.test('Response contains JWT token', function () {",
                   "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData).to.have.property('token');",
-                  "    pm.environment.set('jwt_token', jsonData.token);",
-                  "    pm.environment.set('user_id', jsonData.user.id);",
+                  "    pm.expect(jsonData.data).to.have.property('access_token');",
+                  "    pm.environment.set('jwt_token', jsonData.data.access_token);",
+                  "    pm.environment.set('user_id', jsonData.data.user.id);",
                   "});"
                 ]
               }
@@ -136,7 +141,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"phone\": \"{{customer_phone}}\",\n  \"code\": \"{{otp_code}}\",\n  \"tenant_id\": \"{{tenant_id}}\"\n}"
+              "raw": "{\n  \"phone\": \"{{customer_phone}}\",\n  \"otp\": \"{{otp_code}}\",\n  \"tenant_id\": \"{{tenant_id}}\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/auth/customer/verify-otp",
@@ -158,8 +163,8 @@
                   "});",
                   "pm.test('Response contains JWT token', function () {",
                   "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData).to.have.property('token');",
-                  "    pm.environment.set('jwt_token', jsonData.token);",
+                  "    pm.expect(jsonData.data).to.have.property('access_token');",
+                  "    pm.environment.set('jwt_token', jsonData.data.access_token);",
                   "});"
                 ]
               }

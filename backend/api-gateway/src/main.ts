@@ -1,12 +1,18 @@
 import { NestFactory } from '@nestjs/core';
+import { Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { PrismaService } from './prisma.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const logger = new Logger('APIGateway');
 
   const prismaService = app.get(PrismaService);
   app.enableShutdownHooks();
+
+  // Enable JSON body parsing with increased limit for large payloads
+  app.use(require('express').json({ limit: '10mb' }));
+  app.use(require('express').urlencoded({ limit: '10mb', extended: true }));
 
   app.enableCors({
     origin: true,
@@ -15,14 +21,14 @@ async function bootstrap() {
 
   const port = process.env.PORT ? Number(process.env.PORT) : 3000;
   await app.listen(port, () => {
-    console.log(`API Gateway running on port ${port}`);
-    console.log('Routing:');
-    console.log('  /api/auth/* → auth-service:3001');
-    console.log('  /api/menu/* → menu-service:3003');
-    console.log('  /api/orders/* → order-service:3002');
-    console.log('  /api/inventory/* → inventory-service:3004');
-    console.log('  /api/payments/* → payment-service:3005');
-    console.log('  /api/notifications/* → notification-service:3006');
+    logger.log(`API Gateway running on port ${port}`);
+    logger.log('Routing:');
+    logger.log('  /api/auth/* → auth-service:3001');
+    logger.log('  /api/menu/* → menu-service:3003');
+    logger.log('  /api/orders/* → order-service:3002');
+    logger.log('  /api/inventory/* → inventory-service:3004');
+    logger.log('  /api/payments/* → payment-service:3005');
+    logger.log('  /api/notifications/* → notification-service:3006');
   });
 }
 bootstrap();
