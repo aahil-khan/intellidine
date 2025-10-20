@@ -5,7 +5,7 @@ RUN apk update && apk add --no-cache python3 make g++ openssl openssl-dev || apk
 COPY notification-service/package.json ./
 COPY notification-service/package-lock.json* ./
 COPY notification-service/.npmrc* ./
-RUN npm install --legacy-peer-deps 2>&1 | tail -5
+RUN npm install --legacy-peer-deps
 
 COPY notification-service/tsconfig.json ./tsconfig.json
 COPY notification-service/src ./src

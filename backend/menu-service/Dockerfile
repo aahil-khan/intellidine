@@ -4,12 +4,12 @@ RUN apk update && apk add --no-cache python3 make g++ openssl openssl-dev || apk
 COPY menu-service/package.json ./
 COPY menu-service/package-lock.json* ./
 COPY menu-service/.npmrc* ./
-RUN npm install --legacy-peer-deps 2>&1 | tail -5
+RUN npm install --legacy-peer-deps
 COPY menu-service/tsconfig.json ./tsconfig.json
 COPY menu-service/src ./src
 COPY shared ./shared
 COPY prisma ./prisma
-RUN npx prisma generate --skip-engine-check 2>&1 | tail -5
+RUN npx prisma generate --skip-engine-check
 RUN npx nest build
 
 FROM node:20-alpine

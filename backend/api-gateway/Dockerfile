@@ -5,14 +5,14 @@ RUN apk update && apk add --no-cache python3 make g++ openssl openssl-dev || apk
 COPY api-gateway/package.json ./
 COPY api-gateway/package-lock.json* ./
 COPY api-gateway/.npmrc* ./
-RUN npm install --legacy-peer-deps 2>&1 | tail -5
+RUN npm install --legacy-peer-deps
 
 COPY api-gateway/tsconfig.json ./tsconfig.json
 COPY prisma ./prisma
 COPY api-gateway/src ./src
 COPY shared ./shared
 
-RUN npx prisma generate --skip-engine-check 2>&1 | tail -5
+RUN npx prisma generate --skip-engine-check
 RUN npx nest build
 
 # Runtime stage
