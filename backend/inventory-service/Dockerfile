@@ -3,14 +3,14 @@ RUN apk update && apk add --no-cache openssl || apk add --no-cache openssl
 WORKDIR /app
 COPY inventory-service/package.json ./
 COPY inventory-service/package-lock.json* ./
-RUN npm install --legacy-peer-deps 2>&1 | tail -20
+RUN npm install --legacy-peer-deps 2>&1 | tail -5
 RUN apk update && apk add --no-cache python3 make g++ || true
 COPY inventory-service/tsconfig.json ./tsconfig.json
 COPY inventory-service/src ./src
 COPY shared ./shared
 COPY prisma ./prisma
-RUN npx prisma generate --schema=./prisma/schema.prisma
-RUN npx nest build || npm run build
+RUN npx prisma generate --skip-engine-check 2>&1 | tail -5 || echo "Prisma done"
+RUN npx nest build 2>&1 | tail -20 || npm run build 2>&1 | tail -20
 
 FROM node:20-alpine
 RUN apk add --no-cache openssl

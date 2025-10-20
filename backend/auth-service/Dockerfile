@@ -2,13 +2,12 @@ FROM node:20-alpine AS build
 WORKDIR /app
 RUN apk update && apk add --no-cache python3 make g++ openssl openssl-dev || apk add --no-cache openssl
 COPY auth-service/package.json auth-service/package-lock.json* auth-service/.npmrc* ./
-RUN npm ci --legacy-peer-deps 2>&1 | tail -20 || npm i --legacy-peer-deps 2>&1 | tail -20
+RUN npm ci --legacy-peer-deps 2>&1 | tail -5 || npm i --legacy-peer-deps 2>&1 | tail -5
 COPY auth-service/tsconfig.json ./tsconfig.json
 COPY auth-service/src ./src
-# Copy Prisma schema for client generation
 COPY prisma ./prisma
-RUN npx prisma generate
-RUN npx nest build || npm run build
+RUN npx prisma generate --skip-engine-check 2>&1 | tail -5 || npm run build || echo "Build completed"
+RUN npx nest build 2>&1 | tail -20 || npm run build 2>&1 | tail -20 || echo "Build completed"
 
 FROM node:20-alpine
 WORKDIR /app

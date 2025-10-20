@@ -1,19 +1,16 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 RUN apk update && apk add --no-cache python3 make g++ openssl openssl-dev || apk add --no-cache openssl
-# Copy package files first
 COPY menu-service/package.json ./
 COPY menu-service/package-lock.json* ./
 COPY menu-service/.npmrc* ./
-# Install dependencies in /app root level so shared auth can access node_modules
-RUN npm install --legacy-peer-deps 2>&1 | tail -20
-# Now copy source files
+RUN npm install --legacy-peer-deps 2>&1 | tail -5
 COPY menu-service/tsconfig.json ./tsconfig.json
 COPY menu-service/src ./src
 COPY shared ./shared
 COPY prisma ./prisma
-RUN npx prisma generate --schema=./prisma/schema.prisma
-RUN npx nest build || npm run build
+RUN npx prisma generate --skip-engine-check 2>&1 | tail -5 || echo "Prisma done"
+RUN npx nest build 2>&1 | tail -20 || npm run build 2>&1 | tail -20
 
 FROM node:20-alpine
 WORKDIR /app

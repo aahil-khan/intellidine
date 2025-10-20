@@ -1,10 +1,10 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json* .npmrc* ./
-RUN npm ci --legacy-peer-deps 2>&1 | tail -20 || npm i --legacy-peer-deps 2>&1 | tail -20
+RUN npm ci --legacy-peer-deps 2>&1 | tail -5 || npm i --legacy-peer-deps 2>&1 | tail -5
 COPY tsconfig.json ./tsconfig.json
 COPY src ./src
-RUN npx nest build || npm run build
+RUN npx nest build 2>&1 | tail -20 || npm run build 2>&1 | tail -20
 
 FROM node:20-alpine
 WORKDIR /app

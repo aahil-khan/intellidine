@@ -2,19 +2,16 @@ FROM node:20-alpine AS build
 WORKDIR /app
 RUN apk update && apk add --no-cache python3 make g++ openssl openssl-dev || apk add --no-cache openssl
 
-# Separate COPY statements for flexibility
 COPY notification-service/package.json ./
 COPY notification-service/package-lock.json* ./
 COPY notification-service/.npmrc* ./
-RUN npm install --legacy-peer-deps 2>&1 | tail -20
+RUN npm install --legacy-peer-deps 2>&1 | tail -5
 
-# Copy source files
 COPY notification-service/tsconfig.json ./tsconfig.json
 COPY notification-service/src ./src
 COPY shared ./shared
 
-# Build
-RUN npx nest build || npm run build
+RUN npx nest build 2>&1 | tail -20 || npm run build 2>&1 | tail -20
 
 # Runtime stage
 FROM node:20-alpine

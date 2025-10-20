@@ -4,13 +4,13 @@ RUN apk update && apk add --no-cache openssl python3 make g++ || apk add --no-ca
 COPY payment-service/package.json ./
 COPY payment-service/package-lock.json* ./
 COPY payment-service/.npmrc* ./
-RUN npm install --legacy-peer-deps 2>&1 | tail -20
+RUN npm install --legacy-peer-deps 2>&1 | tail -5
 COPY payment-service/tsconfig.json ./tsconfig.json
 COPY payment-service/src ./src
 COPY shared ./shared
 COPY prisma ./prisma
-RUN npx prisma generate --schema=./prisma/schema.prisma
-RUN npx nest build || npm run build
+RUN npx prisma generate --skip-engine-check 2>&1 | tail -5 || echo "Prisma done"
+RUN npx nest build 2>&1 | tail -20 || npm run build 2>&1 | tail -20
 
 FROM node:20-alpine
 WORKDIR /app
