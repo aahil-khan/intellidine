@@ -10,8 +10,15 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": ".",
-    "strict": true
+    "strict": false,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "types": ["jest", "node"],
+    "paths": {
+      "@shared/auth": ["../shared/auth"]
+    }
   },
+  "include": ["src/**/*", "shared/**/*"],
   "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
 }
 

@@ -58,14 +58,14 @@ export class OrderService {
         throw new BadRequestException('One or more menu items not found');
       }
 
-      const menuItemMap = new Map(menuItems.map((item: any) => [item.id, item]));
+      const menuItemMap = new Map(menuItems.map((item) => [item.id, item]));
 
       // Calculate order totals
       let subtotal = 0;
       const orderItems: any[] = [];
 
       for (const item of createOrderDto.items) {
-        const menuItem = menuItemMap.get(item.menu_item_id);
+        const menuItem = menuItemMap.get(item.menu_item_id) as any;
         if (!menuItem) {
           throw new BadRequestException(`Menu item ${item.menu_item_id} not found`);
         }

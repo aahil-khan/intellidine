@@ -1,0 +1,989 @@
+{
+  "info": {
+    "name": "Intellidine API - Multi-Tenant Restaurant Management",
+    "description": "Comprehensive API collection for IntelliDine SaaS platform with 50+ endpoints across 9 microservices. Includes authentication, menu management, orders, payments, inventory, analytics, notifications, and discount engine.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "intellidine-api-collection-v1"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tenant_id",
+      "value": "11111111-1111-1111-1111-111111111111",
+      "type": "string"
+    },
+    {
+      "key": "customer_phone",
+      "value": "+919876543210",
+      "type": "string"
+    },
+    {
+      "key": "otp_code",
+      "value": "123456",
+      "type": "string"
+    },
+    {
+      "key": "staff_username",
+      "value": "manager1",
+      "type": "string"
+    },
+    {
+      "key": "staff_password",
+      "value": "password123",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "description": "Customer OTP and Staff Login Endpoints",
+      "item": [
+        {
+          "name": "Customer - Request OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response has success flag', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{customer_phone}}\",\n  \"tenant_id\": \"{{tenant_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/customer/request-otp",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "customer", "request-otp"]
+            }
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "POST",
+                "url": "http://localhost:3001/api/auth/customer/request-otp"
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\"success\": true, \"message\": \"OTP sent to phone number\", \"expires_in\": 300}"
+            }
+          ]
+        },
+        {
+          "name": "Customer - Verify OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response contains JWT token', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('token');",
+                  "    pm.environment.set('jwt_token', jsonData.token);",
+                  "    pm.environment.set('user_id', jsonData.user.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{customer_phone}}\",\n  \"code\": \"{{otp_code}}\",\n  \"tenant_id\": \"{{tenant_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/customer/verify-otp",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "customer", "verify-otp"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Staff - Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Response contains JWT token', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('token');",
+                  "    pm.environment.set('jwt_token', jsonData.token);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{staff_username}}\",\n  \"password\": \"{{staff_password}}\",\n  \"tenant_id\": \"{{tenant_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/staff/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "staff", "login"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🍽️ Menu Service",
+      "description": "Menu item management and retrieval",
+      "item": [
+        {
+          "name": "Get Menu with Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/menu?tenant_id={{tenant_id}}&limit=20&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "menu"],
+              "query": [
+                { "key": "tenant_id", "value": "{{tenant_id}}" },
+                { "key": "limit", "value": "20" },
+                { "key": "offset", "value": "0" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Menu Item Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/menu/items/item_001?tenant_id={{tenant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "menu", "items", "item_001"],
+              "query": [
+                { "key": "tenant_id", "value": "{{tenant_id}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Menu Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Hyderabadi Biryani\",\n  \"description\": \"Authentic Hyderabadi biryani with fragrant basmati rice\",\n  \"price\": 250,\n  \"category\": \"Main Course\",\n  \"available\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/menu/items",
+              "host": ["{{base_url}}"],
+              "path": ["api", "menu", "items"]
+            }
+          }
+        },
+        {
+          "name": "Update Menu Item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 275,\n  \"available\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/menu/items/item_001",
+              "host": ["{{base_url}}"],
+              "path": ["api", "menu", "items", "item_001"]
+            }
+          }
+        },
+        {
+          "name": "Delete Menu Item",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/menu/items/item_001",
+              "host": ["{{base_url}}"],
+              "path": ["api", "menu", "items", "item_001"]
+            }
+          }
+        },
+        {
+          "name": "Menu Service Health",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/menu/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "menu", "health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📋 Order Service",
+      "description": "Order creation, retrieval, and management",
+      "item": [
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"table_id\": \"5\",\n  \"items\": [\n    {\n      \"menu_item_id\": \"item_001\",\n      \"quantity\": 2\n    }\n  ],\n  \"payment_method\": \"RAZORPAY\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orders",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders"]
+            }
+          }
+        },
+        {
+          "name": "List Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders?tenant_id={{tenant_id}}&limit=10&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders"],
+              "query": [
+                { "key": "tenant_id", "value": "{{tenant_id}}" },
+                { "key": "limit", "value": "10" },
+                { "key": "offset", "value": "0" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Order Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders/order_001",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "order_001"]
+            }
+          }
+        },
+        {
+          "name": "Update Order Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orders/order_001/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "order_001", "status"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Customer requested cancellation\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orders/order_001/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "order_001", "cancel"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "💳 Payment Service",
+      "description": "Payment processing and tracking",
+      "item": [
+        {
+          "name": "Create Razorpay Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": \"order_001\",\n  \"amount\": 500,\n  \"method\": \"RAZORPAY\",\n  \"tenant_id\": \"{{tenant_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/payments/create-razorpay-order",
+              "host": ["{{base_url}}"],
+              "path": ["api", "payments", "create-razorpay-order"]
+            }
+          }
+        },
+        {
+          "name": "Verify Razorpay Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"razorpay_order_id\": \"order_DBJOWzybf0sJbb\",\n  \"razorpay_payment_id\": \"pay_DBJOWzybf0sJbb\",\n  \"razorpay_signature\": \"9ef4dffbfd84f1318f6739a3ce19f9d85851857ae648f114332d8401e0949a3d\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/payments/verify-razorpay",
+              "host": ["{{base_url}}"],
+              "path": ["api", "payments", "verify-razorpay"]
+            }
+          }
+        },
+        {
+          "name": "Confirm Cash Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": \"order_001\",\n  \"amount\": 500,\n  \"change_amount\": 0,\n  \"tenant_id\": \"{{tenant_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/payments/confirm-cash",
+              "host": ["{{base_url}}"],
+              "path": ["api", "payments", "confirm-cash"]
+            }
+          }
+        },
+        {
+          "name": "Get Payment Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/payments/payment_001",
+              "host": ["{{base_url}}"],
+              "path": ["api", "payments", "payment_001"]
+            }
+          }
+        },
+        {
+          "name": "List Payments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/payments?tenant_id={{tenant_id}}&limit=10&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "payments"],
+              "query": [
+                { "key": "tenant_id", "value": "{{tenant_id}}" },
+                { "key": "limit", "value": "10" },
+                { "key": "offset", "value": "0" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Daily Payment Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/payments/stats/daily",
+              "host": ["{{base_url}}"],
+              "path": ["api", "payments", "stats", "daily"]
+            }
+          }
+        },
+        {
+          "name": "Payment Service Health",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/payments/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "payments", "health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📦 Inventory Service",
+      "description": "Inventory management and stock tracking",
+      "item": [
+        {
+          "name": "Create Inventory Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"menu_item_id\": \"item_001\",\n  \"quantity\": 100,\n  \"reorder_level\": 20,\n  \"tenant_id\": \"{{tenant_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/inventory/items",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inventory", "items"]
+            }
+          }
+        },
+        {
+          "name": "List Inventory Items",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/inventory/items?tenant_id={{tenant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inventory", "items"],
+              "query": [
+                { "key": "tenant_id", "value": "{{tenant_id}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Inventory",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 75,\n  \"reorder_level\": 20\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/inventory/items/inventory_001",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inventory", "items", "inventory_001"]
+            }
+          }
+        },
+        {
+          "name": "Get Low Stock Alerts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/inventory/alerts?tenant_id={{tenant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inventory", "alerts"],
+              "query": [
+                { "key": "tenant_id", "value": "{{tenant_id}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Inventory Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/inventory/stats?tenant_id={{tenant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inventory", "stats"],
+              "query": [
+                { "key": "tenant_id", "value": "{{tenant_id}}" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Analytics Service",
+      "description": "Analytics and reporting endpoints",
+      "item": [
+        {
+          "name": "Daily Metrics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/analytics/daily-metrics?tenant_id={{tenant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analytics", "daily-metrics"],
+              "query": [
+                { "key": "tenant_id", "value": "{{tenant_id}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Order Trends",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/analytics/order-trends?tenant_id={{tenant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analytics", "order-trends"],
+              "query": [
+                { "key": "tenant_id", "value": "{{tenant_id}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Top Selling Items",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/analytics/top-items?tenant_id={{tenant_id}}&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analytics", "top-items"],
+              "query": [
+                { "key": "tenant_id", "value": "{{tenant_id}}" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔔 Notification Service",
+      "description": "Real-time notifications and WebSocket",
+      "item": [
+        {
+          "name": "Connection Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/notifications/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications", "stats"]
+            }
+          }
+        },
+        {
+          "name": "WebSocket Connection",
+          "description": "Connect to WebSocket for real-time notifications. Use Socket.io client library.",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "ws://localhost:3006/socket.io/?transport=websocket",
+              "host": ["localhost:3006"],
+              "path": ["socket.io"],
+              "query": [
+                { "key": "transport", "value": "websocket" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏷️ Discount Engine",
+      "description": "Discount rules and application",
+      "item": [
+        {
+          "name": "Apply Discount",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": \"order_001\",\n  \"tenant_id\": \"{{tenant_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/discounts/apply",
+              "host": ["{{base_url}}"],
+              "path": ["api", "discounts", "apply"]
+            }
+          }
+        },
+        {
+          "name": "List Discount Rules",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "X-Tenant-ID",
+                "value": "{{tenant_id}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/discounts/rules?tenant_id={{tenant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "discounts", "rules"],
+              "query": [
+                { "key": "tenant_id", "value": "{{tenant_id}}" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🚪 API Gateway",
+      "description": "Gateway aggregation endpoints",
+      "item": [
+        {
+          "name": "Aggregate Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Available Routes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/routes",
+              "host": ["{{base_url}}"],
+              "path": ["routes"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

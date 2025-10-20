@@ -1,13 +1,23 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 RUN apk add --no-cache python3 make g++ openssl openssl-dev
-COPY api-gateway/package.json api-gateway/package-lock.json* api-gateway/.npmrc* ./
-RUN npm ci || npm i
+
+# Separate COPY statements for flexibility
+COPY api-gateway/package.json ./
+COPY api-gateway/package-lock.json* ./
+COPY api-gateway/.npmrc* ./
+RUN npm install
+
+# Copy source files
 COPY api-gateway/tsconfig.json ./tsconfig.json
 COPY prisma ./prisma
 COPY api-gateway/src ./src
-RUN npx prisma generate && (npx nest build || npm run build)
+COPY shared ./shared
 
+# Generate Prisma client and build
+RUN npx prisma generate --schema=./prisma/schema.prisma && npx nest build || npm run build
+
+# Runtime stage
 FROM node:20-alpine
 WORKDIR /app
 RUN apk add --no-cache openssl
@@ -17,5 +27,5 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/prisma ./prisma
 EXPOSE 3000
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]
 

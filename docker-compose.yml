@@ -253,9 +253,20 @@ services:
   # Analytics Service
   analytics-service:
     container_name: intellidine-analytics-service
-    build: ./backend/analytics-service
+    build:
+      context: .
+      dockerfile: backend/analytics-service/Dockerfile
     ports:
       - "3007:3007"
+    volumes:
+      - ./backend/prisma:/app/prisma:ro
+    environment:
+      DATABASE_URL: postgresql://admin:${DB_PASSWORD}@postgres:5432/intellidine
+      KAFKA_BROKER: kafka:9092
+      NODE_ENV: production
+    depends_on:
+      - postgres
+      - kafka
     networks:
       - intellidine-network
     restart: unless-stopped

@@ -12,12 +12,14 @@
     "baseUrl": ".",
     "strict": false,
     "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "types": ["jest", "node"],
+    "resolveJsonModule": true,
     "paths": {
-      "@shared/*": ["./shared/*"]
+      "@shared/auth": ["../shared/auth"]
     }
   },
-  "include": ["src/**/*", "shared/**/*"],
+  "include": ["src/**/*", "../shared/auth/**/*"],
   "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
 }
-
