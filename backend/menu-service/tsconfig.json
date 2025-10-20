@@ -18,9 +18,9 @@
     "types": ["jest", "node"],
     "resolveJsonModule": true,
     "paths": {
-      "@shared/auth": ["../shared/auth"]
+      "@shared/*": ["./shared/*"]
     }
   },
-  "include": ["src/**/*", "../shared/auth/**/*"],
+  "include": ["src/**/*", "./shared/**/*"],
   "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
 }
