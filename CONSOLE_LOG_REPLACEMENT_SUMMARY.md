@@ -11,11 +11,13 @@
 ### 1. ✅ payment-service/src/services/razorpay.service.ts (2 instances)
 
 **Changes**:
+
 - Added `Logger` import: `import { Injectable, Logger } from '@nestjs/common';`
 - Created logger instance: `private readonly logger = new Logger(RazorpayService.name);`
 - Replaced `console.log()` → `this.logger.debug()`
 
 **Lines Changed**:
+
 - Line 47: Signature verification logging
 - Line 62: Payment confirmation logging
 
@@ -24,11 +26,13 @@
 ### 2. ✅ payment-service/src/kafka/payment.producer.ts (5 instances)
 
 **Changes**:
+
 - Added `Logger` import: `import { ..., Logger } from '@nestjs/common';`
 - Created logger instance: `private readonly logger = new Logger(PaymentProducer.name);`
 - Replaced all 5 `console.log()` → `this.logger.log()`
 
 **Lines Changed**:
+
 - Line 18: Kafka producer connection logging
 - Line 37: payment.created event logging
 - Line 56: payment.completed event logging
@@ -40,12 +44,14 @@
 ### 3. ✅ inventory-service/src/main.ts (2 instances)
 
 **Changes**:
+
 - Added `Logger` import from @nestjs/common
 - Created logger instance in bootstrap function
 - Replaced `console.log()` → `logger.log()`
 - Replaced `console.error()` → `logger.error()`
 
 **Lines Changed**:
+
 - Line 13: Service startup message
 - Line 18: Service startup error handler
 
@@ -54,11 +60,13 @@
 ### 4. ✅ notification-service/src/main.ts (1 instance)
 
 **Changes**:
+
 - Added `Logger` import from @nestjs/common
 - Created logger instance in bootstrap function
 - Replaced `console.log()` → `logger.log()`
 
 **Lines Changed**:
+
 - Line 20: Service startup message
 
 ---
@@ -66,11 +74,13 @@
 ### 5. ✅ api-gateway/src/main.ts (7 instances)
 
 **Changes**:
+
 - Added `Logger` import from @nestjs/common
 - Created logger instance in bootstrap function
 - Replaced all 7 `console.log()` → `logger.log()`
 
 **Lines Changed**:
+
 - Line 8: Service startup message
 - Line 29: Routing information (6 log statements)
 
@@ -91,7 +101,8 @@
 
 ## Implementation Pattern Used
 
-### For Service Classes (with dependency injection):
+### For Service Classes (with dependency injection)
+
 ```typescript
 import { Logger } from '@nestjs/common';
 
@@ -104,7 +115,8 @@ export class MyService {
 }
 ```
 
-### For main.ts Files (standalone logger):
+### For main.ts Files (standalone logger)
+
 ```typescript
 import { Logger } from '@nestjs/common';
 
@@ -146,4 +158,3 @@ async function bootstrap() {
 - No additional dependencies needed (Logger is built-in)
 
 **Deploy Step**: When building in Docker, these changes will automatically use the NestJS Logger without any additional configuration.
-

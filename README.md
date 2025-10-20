@@ -1,30 +1,16 @@
 # IntelliDine - Restaurant Management SaaS - Phase 1 (MVP)# IntelliDine - Restaurant Management SaaSIntelliDine - Phase 1 (MVP)
 
-
-
 **Status**: Sprint 1 (Phase 1 MVP) - **40% Complete** ✅
-
-
 
 **Last Updated**: October 19, 2025 (Payment Service complete - 4/9 services done)**Status**: Sprint 1 (Phase 1 MVP) - **40% Complete** ✅  Overview
 
-
-
 **Sprint Target**: Oct 18-25 (4 services complete, ahead of schedule by 5+ days)**Last Updated**: October 19, 2025 (Updated: 40% progress - Payment Service complete!)
-
-
 
 ---**Sprint Target**: Oct 18-25 (4 services complete, ahead of schedule)IntelliDine is a microservices-based restaurant management SaaS for QR ordering, KDS, inventory, payments, and analytics. This repository scaffolds the Phase 1 MVP per the PRD.
 
-
-
 ## Overview
 
-
-
 IntelliDine is a modern microservices-based restaurant management platform featuring:## OverviewWhat’s Included
-
-
 
 - **Multi-tenant QR-based ordering** with real-time updates
 
@@ -56,19 +42,11 @@ IntelliDine is a modern microservices-based restaurant management platform featu
 
 - Setup docs for Windows (Docker Desktop/WSL2)- **Kafka-based event streaming** for real-time processing- Setup docs for Windows (Docker Desktop/WSL2)
 
-
-
 ---
-
-
 
 ## ✅ Completed Services## ✅ Completed ServicesQuick Start
 
-
-
 ### 1. Auth Service (100%) ✅
-
-
 
 - **POST /api/auth/customer/request-otp** - Request OTP for customer login### 1. Auth Service (100%)1) Copy environment file
 
@@ -80,11 +58,7 @@ IntelliDine is a modern microservices-based restaurant management platform featu
 
 - All 3 endpoints tested ✅- Staff login: Username/Password → JWTcp .env.example .env
 
-
-
 ### 2. Menu Service (100%) ✅- Redis-backed OTP storage (5-min TTL)
-
-
 
 - **GET /api/menu** - List items with category grouping (300s TTL cache)- All 3 endpoints tested ✅2) Start the stack (first run builds images)
 
@@ -100,11 +74,7 @@ IntelliDine is a modern microservices-based restaurant management platform featu
 
 - All 6 endpoints tested ✅- GET /api/menu - List with category grouping (300s TTL cache)
 
-
-
 ### 3. Order Service (100%) ✅- POST /api/menu/items - Create (manager only)3) Run Prisma migrate (inside any Node service container that mounts prisma)
-
-
 
 - **POST /api/orders** - Create order with multi-item support- PATCH /api/menu/items/:id - Update (manager only)
 
@@ -120,43 +90,31 @@ IntelliDine is a modern microservices-based restaurant management platform featu
 
 - All 5 endpoints tested ✅4) Verify services
 
-
-
 ### 4. Payment Service (100%) ✅### 3. Order Service (100%)
 
-
-
-- **POST /api/payments/create-razorpay-order** - Create payment with Razorpay mock- POST /api/orders - Create with multi-item support- API Gateway: http://localhost:3000
+- **POST /api/payments/create-razorpay-order** - Create payment with Razorpay mock- POST /api/orders - Create with multi-item support- API Gateway: <http://localhost:3000>
 
 - **POST /api/payments/verify-razorpay** - Verify Razorpay signature
 
-- **POST /api/payments/confirm-cash** - Record cash payment with change calculation- GET /api/orders - List with pagination/filtering- Auth Service: http://localhost:3001
+- **POST /api/payments/confirm-cash** - Record cash payment with change calculation- GET /api/orders - List with pagination/filtering- Auth Service: <http://localhost:3001>
 
 - **GET /api/payments/:payment_id** - Retrieve payment details
 
-- **GET /api/payments** - List payments with pagination- GET /api/orders/:id - Single order- Order Service: http://localhost:3002
+- **GET /api/payments** - List payments with pagination- GET /api/orders/:id - Single order- Order Service: <http://localhost:3002>
 
 - **GET /api/payments/stats/daily** - Daily payment statistics by method
 
-- **GET /api/payments/health** - Service health check- PATCH /api/orders/:id/status - Status updates (state machine)- Menu Service: http://localhost:3003
+- **GET /api/payments/health** - Service health check- PATCH /api/orders/:id/status - Status updates (state machine)- Menu Service: <http://localhost:3003>
 
 - Features: Razorpay mocking (ready for real keys), cash payments, Kafka event publishing (4 event types), payment analytics
 
-- All 7 endpoints tested ✅- PATCH /api/orders/:id/cancel - Cancellation- Payment Service: http://localhost:3005
+- All 7 endpoints tested ✅- PATCH /api/orders/:id/cancel - Cancellation- Payment Service: <http://localhost:3005>
 
-
-
----- Features: GST calculation (18%), Kafka events, walk-in customers- ML Service: http://localhost:8000/health
-
-
+---- Features: GST calculation (18%), Kafka events, walk-in customers- ML Service: <http://localhost:8000/health>
 
 ## Quick Start- All 5 endpoints tested ✅- Postgres: localhost:5432
 
-
-
 ### Prerequisites- Redis: localhost:6379
-
-
 
 - Docker Desktop## Quick Start- Kafka: localhost:9092
 
@@ -164,11 +122,7 @@ IntelliDine is a modern microservices-based restaurant management platform featu
 
 - bash or WSL2 on Windows
 
-
-
 ### Setup (5 minutes)### PrerequisitesDocumentation
-
-
 
 ```bash- Docker Desktop
 
@@ -185,8 +139,6 @@ docker compose up -d --build- Action items for you: SEE TASKS.md
 ### Setup (5 minutes)- Full PRD reference: PRD.md
 
 ### Verify Services
-
-
 
 ```bash
 
@@ -308,11 +260,7 @@ curl -X POST http://localhost:3001/api/auth/customer/verify-otp \               
 
 ``````
 
-
-
 ### Order Examples**Tech Stack**: NestJS • PostgreSQL • Prisma • Redis • Kafka • Nginx • Docker
-
-
 
 ```bash## Performance
 
@@ -338,7 +286,7 @@ curl -X POST 'http://localhost:3002/api/orders?tenant_id=11111111-1111-1111-1111
 
 # List OrdersAuth Service      ████████████████████ 100% ✅
 
-curl http://localhost:3002/api/orders?tenant_id=11111111-1111-1111-1111-111111111111Menu Service      ████████████████████ 100% ✅
+curl <http://localhost:3002/api/orders?tenant_id=11111111-1111-1111-1111-111111111111Menu> Service      ████████████████████ 100% ✅
 
 ```Order Service     ████████████████████ 100% ✅
 
@@ -391,6 +339,7 @@ See [API_DOCS.md](API_DOCS.md) for complete endpoint documentation.
 **Status**: On Track ✅
 
 ```
+
 ┌─────────────────────────────────────────────────────────┐
 │                    API Gateway (3000)                    │
 └─────────┬───────────────────────────────────────────────┘
@@ -408,6 +357,7 @@ See [API_DOCS.md](API_DOCS.md) for complete endpoint documentation.
 ┌──────────────────────────────────────────────────────┐
 │       Infrastructure (PostgreSQL, Redis, Kafka)       │
 └──────────────────────────────────────────────────────┘
+
 ```
 
 **Tech Stack**: NestJS 10 • PostgreSQL 15 • Prisma 5 • Redis 7 • Kafka 3 • Nginx • Docker • Node 20 Alpine
@@ -429,6 +379,7 @@ See [API_DOCS.md](API_DOCS.md) for complete endpoint documentation.
 ## Progress Tracking
 
 ```
+
 Sprint 1 Services:
 Auth Service      ████████████████████ 100% ✅
 Menu Service      ████████████████████ 100% ✅
@@ -442,6 +393,7 @@ Analytics Service ░░░░░░░░░░░░░░░░░░░░  
 KDS Service       ░░░░░░░░░░░░░░░░░░░░   0% ⚪ (Queued)
 
 OVERALL PROGRESS:  ████████░░░░░░░░░░░░  40% 🟢
+
 ```
 
 ---
@@ -493,6 +445,7 @@ docker compose up -d --build
 ### Production
 
 Uses Alpine Linux multi-stage builds:
+
 - Minimal image size (~200MB per service)
 - Prisma client generation during build
 - Non-root user execution

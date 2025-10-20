@@ -9,6 +9,7 @@
 ## 📋 BLOCKING ISSUES (Must Fix Before Launch)
 
 ### ⏳ STEP 1: Replace Console.log Statements (30 minutes)
+
 **Status**: 🔴 BLOCKING  
 **Impact**: Production logs would be polluted with console.log output
 
@@ -16,20 +17,21 @@
 
 1. **payment-service/src/services/razorpay.service.ts** (2 instances)
    - Replace: `console.log()` → `this.logger.log()`
-   
+
 2. **payment-service/src/kafka/payment.producer.ts** (5 instances)
    - Replace: All `console.log()` → `this.logger.log()`
-   
+
 3. **inventory-service/src/main.ts** (2 instances)
    - Replace: `console.log()` and `console.error()` → `logger.log()` and `logger.error()`
-   
+
 4. **notification-service/src/main.ts** (1 instance)
    - Replace: `console.log()` → `logger.log()`
-   
+
 5. **api-gateway/src/main.ts** (7 instances)
    - Replace: All routing and startup logs → `logger.log()`
 
 **How to Fix**:
+
 ```typescript
 // Pattern for services:
 private readonly logger = new Logger(ClassName);
@@ -44,6 +46,7 @@ logger.log('message');
 ---
 
 ### ⏳ STEP 2: Configure Environment Variables (30 minutes)
+
 **Status**: 🔴 BLOCKING  
 **Impact**: Services won't start or will use insecure defaults
 
@@ -86,6 +89,7 @@ SENTRY_DSN="https://..."  # If using error tracking
 ```
 
 **Action**:
+
 1. Create `.env.production` file in root
 2. Add all values above
 3. Use in docker-compose when deploying
@@ -93,10 +97,12 @@ SENTRY_DSN="https://..."  # If using error tracking
 ---
 
 ### ⏳ STEP 3: Run Database Migrations (15 minutes)
+
 **Status**: 🔴 BLOCKING  
 **Impact**: Database schema won't be created
 
 **Command**:
+
 ```bash
 # From root directory on deployment server
 cd backend
@@ -107,6 +113,7 @@ npx prisma migrate dev --name initial
 ```
 
 **What it does**:
+
 - Creates all database tables
 - Sets up relationships
 - Creates indexes
@@ -115,10 +122,12 @@ npx prisma migrate dev --name initial
 ---
 
 ### ⏳ STEP 4: Set Up Automated Backups (20 minutes)
+
 **Status**: 🔴 BLOCKING  
 **Impact**: Data loss risk if no backups
 
 **Setup**:
+
 ```bash
 # 1. Create backup script
 cat > /opt/intellidine/backup.sh << 'EOF'
@@ -151,10 +160,12 @@ crontab -e
 ## 📋 RECOMMENDED ISSUES (Should Fix Before Launch)
 
 ### ⏳ STEP 5: Fix XXX Documentation Placeholders (10 minutes)
+
 **Status**: 🟡 OPTIONAL BUT RECOMMENDED  
 **File**: `backend/inventory-service/src/app.controller.ts` (3 instances at lines 93, 198, 232)
 
 **Action**: Replace `XXX` placeholders with proper JSDoc comments
+
 ```typescript
 // Before:
 /**
@@ -174,9 +185,11 @@ crontab -e
 ## 🚀 DEPLOYMENT PHASE (1-2 hours)
 
 ### STEP 6: Deploy to Home Server
+
 **Reference**: See `PRODUCTION_DEPLOYMENT_GUIDE.md` for detailed procedures
 
 **Quick Overview**:
+
 1. Clone repository to home server
 2. Create `.env.production` with secure values
 3. Run docker-compose up
@@ -184,6 +197,7 @@ crontab -e
 5. Test all endpoints via HTTPS
 
 **Commands**:
+
 ```bash
 # On home server:
 git clone <your-repo> /opt/intellidine
@@ -204,13 +218,14 @@ curl http://localhost:3000/health
 
 ## ✅ FINAL VERIFICATION (30 minutes)
 
-### Checklist Before Going Live:
+### Checklist Before Going Live
+
 - [ ] All 15 console.log statements replaced
 - [ ] Environment variables configured
 - [ ] Database migrations run successfully
 - [ ] Backup script tested and working
 - [ ] All services running on home server
-- [ ] API Gateway responding at https://api.yourdomain.com/health
+- [ ] API Gateway responding at <https://api.yourdomain.com/health>
 - [ ] Full Postman collection tested against production URL
 - [ ] SSL/TLS certificate working (Cloudflare)
 - [ ] Error logs checked (no startup errors)
@@ -239,12 +254,14 @@ curl http://localhost:3000/health
 
 ## 🎯 QUICK START CHECKLIST
 
-### Today (Before EOD):
+### Today (Before EOD)
+
 - [ ] Fix all 15 console.log statements (30 min)
 - [ ] Create .env.production (20 min)
 - [ ] Test locally one more time (20 min)
 
-### Deployment Day:
+### Deployment Day
+
 - [ ] SSH into home server
 - [ ] Clone repo
 - [ ] Run migrations
@@ -257,7 +274,8 @@ curl http://localhost:3000/health
 
 ## 📝 NOTES
 
-### Important Reminders:
+### Important Reminders
+
 1. **JWT_SECRET** must be different from dev - use `openssl rand -base64 32`
 2. **DATABASE_URL** must point to production database
 3. **NODE_ENV** must be set to "production" for all services
@@ -265,7 +283,8 @@ curl http://localhost:3000/health
 5. **SSL certificates** are handled by Cloudflare (no manual setup needed)
 6. **Rate limiting** is handled by Cloudflare (no manual setup needed)
 
-### Testing Before Launch:
+### Testing Before Launch
+
 ```bash
 # Run full Postman collection against production
 newman run Intellidine-API-Collection.postman_collection.json \
@@ -274,8 +293,10 @@ newman run Intellidine-API-Collection.postman_collection.json \
   --reporter-json-export test-results-prod.json
 ```
 
-### Rollback Plan:
+### Rollback Plan
+
 If anything goes wrong:
+
 1. Docker logs available at: `/opt/intellidine/logs/`
 2. Database backups at: `/opt/intellidine/backups/`
 3. Can quickly restore from most recent backup
@@ -296,4 +317,3 @@ If anything goes wrong:
 **Last Updated**: October 20, 2025  
 **Status**: Ready for pre-production fixes  
 **Next Action**: Fix console.log statements
-

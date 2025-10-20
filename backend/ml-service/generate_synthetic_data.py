@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-from faker import Faker
+from faker import Faker # type: ignore
 
 fake = Faker()
 
