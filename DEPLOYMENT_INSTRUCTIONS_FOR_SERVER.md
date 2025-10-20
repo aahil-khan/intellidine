@@ -155,12 +155,12 @@ When you set up `.env.production`:
 
 Before you start, make sure you have:
 
-- [ ] SSH access to your home server
-- [ ] Docker & Docker Compose installed
-- [ ] Domain pointed to Cloudflare (nameservers changed)
-- [ ] Cloudflare account with domain
-- [ ] Terminal/SSH window open
-- [ ] Git installed on server
+- [x] SSH access to your home server
+- [x] Docker & Docker Compose installed
+- [x] Domain pointed to Cloudflare (nameservers changed)
+- [x] Cloudflare account with domain
+- [x] Terminal/SSH window open
+- [x] Git installed on server
 
 ---
 

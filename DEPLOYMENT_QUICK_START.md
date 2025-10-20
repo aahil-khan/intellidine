@@ -118,9 +118,9 @@ curl -X POST https://api.yourdomain.com/api/auth/customer/request-otp \
 
 ## 📋 CHECKLIST
 
-- [ ] Git cloned
-- [ ] `.env.production` created with JWT_SECRET
-- [ ] `docker-compose up -d --build` running
+- [x] Git cloned
+- [x] `.env.production` created with JWT_SECRET
+- [x] `docker-compose up -d --build` running
 - [ ] `curl http://localhost:3000/health` returns 200
 - [ ] `npx prisma migrate deploy` completed
 - [ ] cloudflared installed
