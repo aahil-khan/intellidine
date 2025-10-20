@@ -9,8 +9,9 @@
 
 ### Issue #1: Response Format Mismatch
 
-**Problem**: 
+**Problem**:
 The API Gateway wraps all responses in a standard format:
+
 ```json
 {
   "data": { /* actual response */ },
@@ -24,6 +25,7 @@ The API Gateway wraps all responses in a standard format:
 But Postman tests were expecting raw responses without the wrapper.
 
 **Example**:
+
 - **Expected by Postman**: `{ "success": true, "message": "OTP sent" }`
 - **Actual from Gateway**: `{ "data": { "message": "OTP sent" }, "meta": {...} }`
 
@@ -35,6 +37,7 @@ But Postman tests were expecting raw responses without the wrapper.
 Auth service returns `access_token` field, but Postman was looking for `token`.
 
 **Auth Service Response**:
+
 ```json
 {
   "data": {
@@ -46,6 +49,7 @@ Auth service returns `access_token` field, but Postman was looking for `token`.
 ```
 
 **Postman Expected**:
+
 ```json
 {
   "token": "eyJhbGc...",
@@ -71,6 +75,7 @@ Auth endpoints (`/api/auth/customer/request-otp`, etc.) were not in the public e
 **File**: `Intellidine-API-Collection.postman_collection.json`
 
 **Before**:
+
 ```javascript
 pm.test('Response has success flag', function () {
     var jsonData = pm.response.json();
@@ -79,6 +84,7 @@ pm.test('Response has success flag', function () {
 ```
 
 **After**:
+
 ```javascript
 pm.test('Response has message', function () {
     var jsonData = pm.response.json();
@@ -94,6 +100,7 @@ pm.test('Response has message', function () {
 **File**: `Intellidine-API-Collection.postman_collection.json`
 
 **Before**:
+
 ```javascript
 pm.test('Response contains JWT token', function () {
     var jsonData = pm.response.json();
@@ -103,6 +110,7 @@ pm.test('Response contains JWT token', function () {
 ```
 
 **After**:
+
 ```javascript
 pm.test('Response contains JWT token', function () {
     var jsonData = pm.response.json();
@@ -119,6 +127,7 @@ pm.test('Response contains JWT token', function () {
 **File**: `Intellidine-API-Collection.postman_collection.json`
 
 **Before**:
+
 ```javascript
 pm.test('Response contains JWT token', function () {
     var jsonData = pm.response.json();
@@ -128,6 +137,7 @@ pm.test('Response contains JWT token', function () {
 ```
 
 **After**:
+
 ```javascript
 pm.test('Response contains JWT token', function () {
     var jsonData = pm.response.json();
@@ -143,6 +153,7 @@ pm.test('Response contains JWT token', function () {
 **File**: `backend/api-gateway/src/middleware/tenant-verification.middleware.ts`
 
 **Before**:
+
 ```typescript
 const publicEndpoints = [
   '/health',
@@ -154,6 +165,7 @@ const publicEndpoints = [
 ```
 
 **After**:
+
 ```typescript
 const publicEndpoints = [
   '/health',
@@ -168,6 +180,7 @@ const publicEndpoints = [
 ```
 
 **Why**: These endpoints don't require tenant verification because:
+
 - `request-otp`: Customer hasn't authenticated yet
 - `verify-otp`: Customer provides tenant_id in request body
 - `staff/login`: Staff authentication is independent
@@ -185,6 +198,7 @@ const publicEndpoints = [
 ## 🧪 Test Results Summary
 
 ### Before Fixes
+
 ```
 failures: 4
 
@@ -204,6 +218,7 @@ failures: 4
 ```
 
 ### Expected After Fixes
+
 ```
 requests executed: 35
 failures: 0
@@ -288,6 +303,7 @@ All responses from API Gateway (port 3000) follow this format:
 ### Auth Service Response Examples
 
 **Request OTP**:
+
 ```json
 {
   "data": {
@@ -302,6 +318,7 @@ All responses from API Gateway (port 3000) follow this format:
 ```
 
 **Verify OTP**:
+
 ```json
 {
   "data": {
@@ -320,6 +337,7 @@ All responses from API Gateway (port 3000) follow this format:
 ```
 
 **Staff Login**:
+
 ```json
 {
   "data": {
@@ -387,6 +405,7 @@ Tenant ID: 11111111-1111-1111-1111-111111111111
 ## 🎯 Next Steps
 
 1. **Run Postman Collection**
+
    ```bash
    newman run Intellidine-API-Collection.postman_collection.json -e local.env.postman.json
    ```
@@ -424,4 +443,3 @@ Tenant ID: 11111111-1111-1111-1111-111111111111
 **Status**: ✅ PRODUCTION READY FOR TESTING  
 **Last Updated**: October 20, 2025  
 **Created By**: AI Assistant
-
