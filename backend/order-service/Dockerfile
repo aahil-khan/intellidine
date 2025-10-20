@@ -8,7 +8,7 @@ COPY order-service/tsconfig.json ./tsconfig.json
 COPY order-service/src ./src
 COPY shared ./shared
 COPY prisma ./prisma
-RUN npx prisma generate --skip-engine-check
+RUN npx prisma generate
 RUN npx nest build
 
 FROM node:20-alpine

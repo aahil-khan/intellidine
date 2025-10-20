@@ -12,7 +12,7 @@ COPY prisma ./prisma
 COPY api-gateway/src ./src
 COPY shared ./shared
 
-RUN npx prisma generate --skip-engine-check
+RUN npx prisma generate
 RUN npx nest build
 
 # Runtime stage
