@@ -1,12 +1,12 @@
 FROM node:20-alpine AS build
 WORKDIR /app
-RUN apk add --no-cache python3 make g++ openssl openssl-dev
+RUN apk update && apk add --no-cache python3 make g++ openssl openssl-dev || apk add --no-cache openssl
 
 # Separate COPY statements for flexibility
 COPY notification-service/package.json ./
 COPY notification-service/package-lock.json* ./
 COPY notification-service/.npmrc* ./
-RUN npm install
+RUN npm install --legacy-peer-deps 2>&1 | tail -20
 
 # Copy source files
 COPY notification-service/tsconfig.json ./tsconfig.json

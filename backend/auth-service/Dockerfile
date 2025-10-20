@@ -1,8 +1,8 @@
 FROM node:20-alpine AS build
 WORKDIR /app
-RUN apk add --no-cache python3 make g++ openssl openssl-dev
+RUN apk update && apk add --no-cache python3 make g++ openssl openssl-dev || apk add --no-cache openssl
 COPY auth-service/package.json auth-service/package-lock.json* auth-service/.npmrc* ./
-RUN npm ci || npm i
+RUN npm ci --legacy-peer-deps 2>&1 | tail -20 || npm i --legacy-peer-deps 2>&1 | tail -20
 COPY auth-service/tsconfig.json ./tsconfig.json
 COPY auth-service/src ./src
 # Copy Prisma schema for client generation

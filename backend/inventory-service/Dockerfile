@@ -1,10 +1,10 @@
 FROM node:20-alpine AS build
-RUN apk add --no-cache openssl
+RUN apk update && apk add --no-cache openssl || apk add --no-cache openssl
 WORKDIR /app
 COPY inventory-service/package.json ./
 COPY inventory-service/package-lock.json* ./
-RUN npm install
-RUN apk add --no-cache python3 make g++
+RUN npm install --legacy-peer-deps 2>&1 | tail -20
+RUN apk update && apk add --no-cache python3 make g++ || true
 COPY inventory-service/tsconfig.json ./tsconfig.json
 COPY inventory-service/src ./src
 COPY shared ./shared

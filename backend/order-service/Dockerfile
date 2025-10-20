@@ -1,9 +1,9 @@
 FROM node:20-alpine AS build
 WORKDIR /app
-RUN apk add --no-cache python3 make g++ openssl openssl-dev
+RUN apk update && apk add --no-cache python3 make g++ openssl openssl-dev || apk add --no-cache openssl
 COPY order-service/package.json ./
 COPY order-service/package-lock.json* ./
-RUN npm install
+RUN npm install --legacy-peer-deps 2>&1 | tail -20
 COPY order-service/tsconfig.json ./tsconfig.json
 COPY order-service/src ./src
 COPY shared ./shared

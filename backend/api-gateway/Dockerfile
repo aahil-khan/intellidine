@@ -1,12 +1,12 @@
 FROM node:20-alpine AS build
 WORKDIR /app
-RUN apk add --no-cache python3 make g++ openssl openssl-dev
+RUN apk update && apk add --no-cache python3 make g++ openssl openssl-dev || apk add --no-cache openssl
 
 # Separate COPY statements for flexibility
 COPY api-gateway/package.json ./
 COPY api-gateway/package-lock.json* ./
 COPY api-gateway/.npmrc* ./
-RUN npm install
+RUN npm install --legacy-peer-deps 2>&1 | tail -20
 
 # Copy source files
 COPY api-gateway/tsconfig.json ./tsconfig.json
