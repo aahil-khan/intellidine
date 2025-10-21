@@ -18,6 +18,15 @@ export class AppController {
   }
 
   /**
+   * Alias health endpoint at /api/menu/health
+   * GET /api/menu/health
+   */
+  @Get('/api/menu/health')
+  menuHealth() {
+    return { status: 'ok', service: 'menu-service', endpoint: '/api/menu/health' };
+  }
+
+  /**
    * Get menu for a tenant (organized by categories)
    * GET /api/menu?tenant_id=550e8400&category_id=optional
    */

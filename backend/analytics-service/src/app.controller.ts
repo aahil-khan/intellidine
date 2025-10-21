@@ -32,6 +32,124 @@ export class AppController {
   }
 
   /**
+   * Alias endpoint: daily-metrics
+   * Maps to /metrics/daily for Postman compatibility
+   * GET /api/analytics/daily-metrics?tenantId=...&date=...
+   */
+  @Get('/daily-metrics')
+  async getDailyMetricsAlias(
+    @Query('tenant_id') tenantId: string,
+    @Query('tenantId') tenantIdAlt: string,
+    @Query('date') dateStr?: string,
+  ) {
+    const tid = tenantId || tenantIdAlt;
+    const date = dateStr ? new Date(dateStr) : new Date();
+
+    const metrics = await this.dailyMetricsService.getDailyMetrics(tid, date);
+
+    if (!metrics) {
+      return this.dailyMetricsService.calculateDailyMetrics(tid, date);
+    }
+
+    return {
+      data: metrics,
+      meta: {
+        timestamp: new Date().toISOString(),
+      },
+    };
+  }
+
+  /**
+   * Alias endpoint: order-trends
+   * Maps to /metrics/range for Postman compatibility
+   * GET /api/analytics/order-trends?tenant_id=...&startDate=...&endDate=...
+   */
+  @Get('/order-trends')
+  async getOrderTrendsAlias(
+    @Query('tenant_id') tenantId: string,
+    @Query('startDate') startDateStr: string,
+    @Query('endDate') endDateStr: string,
+  ) {
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    const metrics = await this.dailyMetricsService.getMetricsRange(
+      tenantId,
+      startDate,
+      endDate,
+    );
+
+    return {
+      data: metrics,
+      meta: {
+        timestamp: new Date().toISOString(),
+        period: {
+          start: startDate.toISOString().split('T')[0],
+          end: endDate.toISOString().split('T')[0],
+        },
+      },
+    };
+  }
+
+  /**
+   * Alias endpoint: top-items
+   * Returns top selling items for a date range
+   * GET /api/analytics/top-items?tenant_id=...&limit=10&startDate=...&endDate=...
+   */
+  @Get('/top-items')
+  async getTopItemsAlias(
+    @Query('tenant_id') tenantId: string,
+    @Query('limit') limitStr?: string,
+    @Query('startDate') startDateStr?: string,
+    @Query('endDate') endDateStr?: string,
+  ) {
+    const limit = parseInt(limitStr || '10', 10);
+    const startDate = startDateStr ? new Date(startDateStr) : undefined;
+    const endDate = endDateStr ? new Date(endDateStr) : undefined;
+
+    const orders = await this.orderHistoryService.getTenantOrders(
+      tenantId,
+      startDate || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      endDate || new Date(),
+    );
+
+    // Calculate top items from orders
+    const itemCount: Record<string, { menuItemId: string; quantity: number; revenue: number }> = {};
+
+    orders.forEach((order: any) => {
+      if (order.items) {
+        order.items.forEach((item: any) => {
+          if (!itemCount[item.menuItemId]) {
+            itemCount[item.menuItemId] = {
+              menuItemId: item.menuItemId,
+              quantity: 0,
+              revenue: 0,
+            };
+          }
+          itemCount[item.menuItemId].quantity += item.quantity;
+          itemCount[item.menuItemId].revenue += item.quantity * item.price;
+        });
+      }
+    });
+
+    const topItems = Object.values(itemCount)
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, limit);
+
+    return {
+      data: topItems,
+      meta: {
+        timestamp: new Date().toISOString(),
+        period: {
+          start: (startDate || new Date()).toISOString().split('T')[0],
+          end: (endDate || new Date()).toISOString().split('T')[0],
+        },
+        totalItems: topItems.length,
+      },
+    };
+  }
+
+  /**
    * Get daily metrics for a specific date
    * Query params:
    *   - tenantId: Tenant identifier (required)

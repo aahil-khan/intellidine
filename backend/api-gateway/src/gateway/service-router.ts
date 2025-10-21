@@ -43,6 +43,16 @@ export class ServiceRouter {
       host: process.env.NOTIFICATION_SERVICE_HOST || 'notification-service',
       port: 3106,
     },
+    discounts: {
+      name: 'discount-engine',
+      host: process.env.DISCOUNT_ENGINE_HOST || 'discount-engine',
+      port: 3108,
+    },
+    analytics: {
+      name: 'analytics-service',
+      host: process.env.ANALYTICS_SERVICE_HOST || 'analytics-service',
+      port: 3107,
+    },
   };
 
   constructor(private readonly httpService: HttpService) {
@@ -80,6 +90,10 @@ export class ServiceRouter {
         return this.services.payments;
       case 'notifications':
         return this.services.notifications;
+      case 'discounts':
+        return this.services.discounts;
+      case 'analytics':
+        return this.services.analytics;
       default:
         return null;
     }

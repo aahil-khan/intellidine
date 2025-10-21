@@ -2,7 +2,7 @@ import { Controller, Get, Query } from '@nestjs/common';
 import { SocketBroadcastService } from './services/socket-broadcast.service';
 import { KafkaConsumerService } from './services/kafka-consumer.service';
 
-@Controller()
+@Controller('/api/notifications')
 export class AppController {
   constructor(
     private readonly broadcastService: SocketBroadcastService,
@@ -18,7 +18,7 @@ export class AppController {
     };
   }
 
-  @Get('/notifications/stats')
+  @Get('/stats')
   getStats() {
     return {
       service: 'notification-service',
@@ -27,7 +27,7 @@ export class AppController {
     };
   }
 
-  @Get('/notifications/test')
+  @Get('/test')
   testBroadcast(@Query('tenant_id') tenantId: string) {
     if (!tenantId) {
       return { error: 'tenant_id query parameter required' };

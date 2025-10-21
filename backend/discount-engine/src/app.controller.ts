@@ -55,6 +55,7 @@ export class AppController {
   /**
    * Get all rules for a tenant
    * GET /api/discount/rules?tenant=default
+   * Also accessible as: GET /api/discounts/rules (Postman compatibility)
    */
   @Get('/rules')
   getTenantRules(@Query('tenant') tenantId: string = 'default') {
@@ -71,6 +72,85 @@ export class AppController {
       };
     } catch (error) {
       this.logger.error(`Error fetching rules: ${error}`);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * Alias: /api/discounts/rules
+   * GET /api/discounts/rules?tenant_id=...&tenant=...
+   */
+  @Get('/discounts/rules')
+  getDiscountsRulesAlias(
+    @Query('tenant_id') tenantId?: string,
+    @Query('tenant') tenantAlt?: string,
+  ) {
+    const tid = tenantId || tenantAlt || 'default';
+    this.logger.log(`Fetching rules for tenant ${tid} (alias endpoint)`);
+
+    try {
+      const rules = this.discountRuleEngine.getTenantRules(tid);
+
+      return {
+        success: true,
+        tenantId: tid,
+        ruleCount: rules.length,
+        data: rules,
+      };
+    } catch (error) {
+      this.logger.error(`Error fetching rules: ${error}`);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * Apply discount (alias for /evaluate)
+   * POST /api/discount/apply or /api/discounts/apply
+   * For Postman compatibility
+   */
+  @Post('/apply')
+  applyDiscountAlias(@Body() context: DiscountEvaluationContext) {
+    this.logger.log(`Applying discounts for order ${context.orderId} (alias endpoint)`);
+
+    try {
+      const result = this.discountRuleEngine.evaluateDiscounts(context);
+
+      return {
+        success: true,
+        data: result,
+      };
+    } catch (error) {
+      this.logger.error(`Error applying discounts: ${error}`);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * Alias: /api/discounts/apply
+   * POST /api/discounts/apply
+   */
+  @Post('/discounts/apply')
+  applyDiscountsAlias(@Body() context: DiscountEvaluationContext) {
+    this.logger.log(`Applying discounts for order ${context.orderId} (discounts alias)`);
+
+    try {
+      const result = this.discountRuleEngine.evaluateDiscounts(context);
+
+      return {
+        success: true,
+        data: result,
+      };
+    } catch (error) {
+      this.logger.error(`Error applying discounts: ${error}`);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
