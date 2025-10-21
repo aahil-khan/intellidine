@@ -23,12 +23,14 @@ async function bootstrap() {
   await app.listen(port, () => {
     logger.log(`API Gateway running on port ${port}`);
     logger.log('Routing:');
-    logger.log('  /api/auth/* → auth-service:3001');
-    logger.log('  /api/menu/* → menu-service:3003');
-    logger.log('  /api/orders/* → order-service:3002');
-    logger.log('  /api/inventory/* → inventory-service:3004');
-    logger.log('  /api/payments/* → payment-service:3005');
-    logger.log('  /api/notifications/* → notification-service:3006');
+    logger.log('  /api/auth/* → auth-service:3101');
+    logger.log('  /api/menu/* → menu-service:3103');
+    logger.log('  /api/orders/* → order-service:3102');
+    logger.log('  /api/inventory/* → inventory-service:3104');
+    logger.log('  /api/payments/* → payment-service:3105');
+    logger.log('  /api/notifications/* → notification-service:3106');
+    logger.log('  /api/analytics/* → analytics-service:3107');
+    logger.log('  /api/discounts/* → discount-engine:3108');
   });
 }
 bootstrap();
