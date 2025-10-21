@@ -6,11 +6,11 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('InventoryService');
-  const port = process.env.PORT ? Number(process.env.PORT) : 3004;
+  const port = process.env.PORT ? Number(process.env.PORT) : 3104;
 
   app.enableCors({ origin: true, credentials: true });
 
-  await app.listen(port, () => {
+  await app.listen(port, '0.0.0.0', () => {
     logger.log(
       `✅ Inventory Service running on http://localhost:${port}/api/inventory/health`,
     );

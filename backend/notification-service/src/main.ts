@@ -11,14 +11,14 @@ async function bootstrap() {
   // Enable WebSocket with Socket.io
   app.useWebSocketAdapter(new IoAdapter(app));
   
-  const port = process.env.PORT ? Number(process.env.PORT) : 3006;
+  const port = process.env.PORT ? Number(process.env.PORT) : 3106;
   
   app.enableCors({
     origin: true,
     credentials: true,
   });
 
-  await app.listen(port, () => {
+  await app.listen(port, '0.0.0.0', () => {
     logger.log(`Notification Service running on port ${port}`);
   });
 }
