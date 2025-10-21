@@ -43,13 +43,13 @@
       "key": "staff_username",
       "value": "manager1",
       "type": "string",
-      "description": "⚠️  IMPORTANT: Staff users must be created in the database first. Use your actual staff username here after creating users via SQL or admin panel."
+      "description": "Staff username for login. Default test users: manager1, chef1, waiter1. Change in production!"
     },
     {
       "key": "staff_password",
-      "value": "password123",
+      "value": "Password@123",
       "type": "string",
-      "description": "⚠️  IMPORTANT: Use actual staff password. Default shown here is for reference only - update with real credentials."
+      "description": "Staff password. Default test password for all users. CHANGE IN PRODUCTION!"
     },
     {
       "key": "user_id",

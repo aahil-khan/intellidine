@@ -13,6 +13,49 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
+-- Staff Users
+-- Password: Password@123 (hashed with bcrypt, 10 rounds)
+-- These are default test credentials, CHANGE IN PRODUCTION
+INSERT INTO users (id, tenant_id, username, email, password_hash, role, is_temp_password, is_active, created_at, updated_at)
+VALUES
+  (
+    '22222222-2222-2222-2222-222222222222',
+    '11111111-1111-1111-1111-111111111111',
+    'manager1',
+    'manager@spiceroute.com',
+    '$2b$10$VbcPfEUxsheSvMt37.HGgOF7mAmaB0CGcyvbW9juJXwOzaisoW8Ie',
+    'MANAGER',
+    FALSE,
+    TRUE,
+    NOW(),
+    NOW()
+  ),
+  (
+    '33333333-3333-3333-3333-333333333333',
+    '11111111-1111-1111-1111-111111111111',
+    'chef1',
+    'chef@spiceroute.com',
+    '$2b$10$VbcPfEUxsheSvMt37.HGgOF7mAmaB0CGcyvbW9juJXwOzaisoW8Ie',
+    'KITCHEN_STAFF',
+    FALSE,
+    TRUE,
+    NOW(),
+    NOW()
+  ),
+  (
+    '44444444-4444-4444-4444-444444444444',
+    '11111111-1111-1111-1111-111111111111',
+    'waiter1',
+    'waiter@spiceroute.com',
+    '$2b$10$VbcPfEUxsheSvMt37.HGgOF7mAmaB0CGcyvbW9juJXwOzaisoW8Ie',
+    'WAITER',
+    FALSE,
+    TRUE,
+    NOW(),
+    NOW()
+  )
+ON CONFLICT DO NOTHING;
+
 -- Tables (1-10)
 INSERT INTO tables (id, tenant_id, table_number, capacity, qr_code_url, created_at)
 VALUES
