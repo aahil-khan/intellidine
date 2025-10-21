@@ -16,32 +16,32 @@ export class ServiceRouter {
     auth: {
       name: 'auth-service',
       host: process.env.AUTH_SERVICE_HOST || 'auth-service',
-      port: 3001,
+      port: 3101,
     },
     menu: {
       name: 'menu-service',
       host: process.env.MENU_SERVICE_HOST || 'menu-service',
-      port: 3003,
+      port: 3103,
     },
     orders: {
       name: 'order-service',
       host: process.env.ORDER_SERVICE_HOST || 'order-service',
-      port: 3002,
+      port: 3102,
     },
     inventory: {
       name: 'inventory-service',
       host: process.env.INVENTORY_SERVICE_HOST || 'inventory-service',
-      port: 3004,
+      port: 3104,
     },
     payments: {
       name: 'payment-service',
       host: process.env.PAYMENT_SERVICE_HOST || 'payment-service',
-      port: 3005,
+      port: 3105,
     },
     notifications: {
       name: 'notification-service',
       host: process.env.NOTIFICATION_SERVICE_HOST || 'notification-service',
-      port: 3006,
+      port: 3106,
     },
   };
 

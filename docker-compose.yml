@@ -10,7 +10,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5443:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin"]
       interval: 10s
@@ -24,7 +24,7 @@ services:
     image: redis:7-alpine
     container_name: intellidine-redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -61,7 +61,7 @@ services:
       context: ./backend
       dockerfile: ./api-gateway/Dockerfile
     ports:
-      - "3000:3000"
+      - "3100:3100"
     environment:
       - DATABASE_URL=postgresql://admin:${DB_PASSWORD}@postgres:5432/intellidine
       - REDIS_URL=redis://redis:6379
@@ -69,7 +69,7 @@ services:
       - NODE_ENV=development
       - AUTH_MODE=${AUTH_MODE:-header}
       - JWT_SECRET=${JWT_SECRET}
-      - PORT=3000
+      - PORT=3100
     depends_on:
       postgres:
         condition: service_healthy
@@ -88,14 +88,14 @@ services:
       context: ./backend
       dockerfile: ./auth-service/Dockerfile
     ports:
-      - "3001:3001"
+      - "3101:3101"
     environment:
       - DATABASE_URL=postgresql://admin:${DB_PASSWORD}@postgres:5432/intellidine
       - REDIS_URL=redis://redis:6379
       - JWT_SECRET=${JWT_SECRET}
       - MSG91_AUTH_KEY=${MSG91_AUTH_KEY}
       - NODE_ENV=development
-      - PORT=3001
+      - PORT=3101
     depends_on:
       postgres:
         condition: service_healthy
@@ -113,12 +113,12 @@ services:
       context: ./backend
       dockerfile: ./order-service/Dockerfile
     ports:
-      - "3002:3002"
+      - "3102:3102"
     environment:
       - DATABASE_URL=postgresql://admin:${DB_PASSWORD}@postgres:5432/intellidine
       - KAFKA_BROKER=kafka:9092
       - NODE_ENV=development
-      - PORT=3002
+      - PORT=3102
     depends_on:
       postgres:
         condition: service_healthy
@@ -135,12 +135,12 @@ services:
       context: ./backend
       dockerfile: ./menu-service/Dockerfile
     ports:
-      - "3003:3003"
+      - "3103:3103"
     environment:
       - DATABASE_URL=postgresql://admin:${DB_PASSWORD}@postgres:5432/intellidine
       - REDIS_URL=redis://redis:6379
       - NODE_ENV=development
-      - PORT=3003
+      - PORT=3103
     depends_on:
       postgres:
         condition: service_healthy
@@ -157,13 +157,13 @@ services:
       context: ./backend
       dockerfile: ./payment-service/Dockerfile
     ports:
-      - "3005:3005"
+      - "3105:3105"
     environment:
       - DATABASE_URL=postgresql://admin:${DB_PASSWORD}@postgres:5432/intellidine
       - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
       - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
       - NODE_ENV=development
-      - PORT=3005
+      - PORT=3105
     depends_on:
       postgres:
         condition: service_healthy
@@ -178,12 +178,12 @@ services:
       context: ./backend
       dockerfile: ./inventory-service/Dockerfile
     ports:
-      - "3010:3004"
+      - "3104:3104"
     environment:
       - DATABASE_URL=postgresql://admin:${DB_PASSWORD}@postgres:5432/intellidine
       - KAFKA_BROKER=kafka:9092
       - NODE_ENV=development
-      - PORT=3004
+      - PORT=3104
     depends_on:
       postgres:
         condition: service_healthy
@@ -239,11 +239,11 @@ services:
       context: ./backend
       dockerfile: ./notification-service/Dockerfile
     ports:
-      - "3006:3006"
+      - "3106:3106"
     environment:
       - KAFKA_BROKER=kafka:9092
       - NODE_ENV=development
-      - PORT=3006
+      - PORT=3106
     depends_on:
       - kafka
     networks:
@@ -257,7 +257,7 @@ services:
       context: .
       dockerfile: backend/analytics-service/Dockerfile
     ports:
-      - "3007:3007"
+      - "3107:3107"
     volumes:
       - ./backend/prisma:/app/prisma:ro
     environment:
@@ -274,9 +274,11 @@ services:
   # Discount Engine
   discount-engine:
     container_name: intellidine-discount-engine
-    build: ./backend/discount-engine
+    build:
+      context: ./backend
+      dockerfile: ./discount-engine/Dockerfile
     ports:
-      - "3008:3008"
+      - "3108:3108"
     networks:
       - intellidine-network
     restart: unless-stopped
@@ -287,7 +289,7 @@ services:
     container_name: intellidine-nginx
     build: ./infrastructure/nginx
     ports:
-      - "80:80"
+      - "81:80"
       # - "443:443" # enable after TLS
     depends_on:
       - api-gateway

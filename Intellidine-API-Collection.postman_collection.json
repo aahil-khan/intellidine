@@ -8,7 +8,57 @@
   "variable": [
     {
       "key": "base_url",
-      "value": "http://localhost:3000",
+      "value": "http://localhost:3100",
+      "type": "string"
+    },
+    {
+      "key": "api_gateway_url",
+      "value": "http://localhost:3100",
+      "type": "string"
+    },
+    {
+      "key": "auth_service_url",
+      "value": "http://localhost:3101",
+      "type": "string"
+    },
+    {
+      "key": "order_service_url",
+      "value": "http://localhost:3102",
+      "type": "string"
+    },
+    {
+      "key": "menu_service_url",
+      "value": "http://localhost:3103",
+      "type": "string"
+    },
+    {
+      "key": "inventory_service_url",
+      "value": "http://localhost:3104",
+      "type": "string"
+    },
+    {
+      "key": "payment_service_url",
+      "value": "http://localhost:3105",
+      "type": "string"
+    },
+    {
+      "key": "notification_service_url",
+      "value": "http://localhost:3106",
+      "type": "string"
+    },
+    {
+      "key": "analytics_service_url",
+      "value": "http://localhost:3107",
+      "type": "string"
+    },
+    {
+      "key": "discount_engine_url",
+      "value": "http://localhost:3108",
+      "type": "string"
+    },
+    {
+      "key": "ml_service_url",
+      "value": "http://localhost:8000",
       "type": "string"
     },
     {
