@@ -7,7 +7,7 @@ import { VerifyOtpResponseDto } from './dto/verify-otp-response.dto';
 import { LoginResponseDto } from './dto/login-response.dto';
 import { JwtUtils } from './utils/jwt.utils';
 
-@Controller()
+@Controller('api/auth')
 export class AppController {
   private readonly logger = new Logger(AppController.name);
 
@@ -24,7 +24,7 @@ export class AppController {
    * Body: { phone: "+919876543210" }
    * Response: { message: "OTP sent", expires_at: "2025-10-18T10:35:00Z" }
    */
-  @Post('/api/auth/customer/request-otp')
+  @Post('/customer/request-otp')
   async requestOtp(@Body() requestOtpDto: RequestOtpDto) {
     try {
       const result = await this.otpService.requestOtp(requestOtpDto.phone);
@@ -41,7 +41,7 @@ export class AppController {
    * Body: { phone: "+919876543210", otp: "123456" }
    * Response: { access_token: "eyJhbGc...", expires_at: "...", user: {...} }
    */
-  @Post('/api/auth/customer/verify-otp')
+  @Post('/customer/verify-otp')
   async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto): Promise<VerifyOtpResponseDto> {
     try {
       const { customerId, isNewCustomer } = await this.otpService.verifyOtp(verifyOtpDto.phone, verifyOtpDto.otp);
@@ -72,7 +72,7 @@ export class AppController {
    * Body: { username: "manager1", password: "password123" }
    * Response: { access_token: "eyJhbGc...", expires_at: "...", user: {...} }
    */
-  @Post('/api/auth/staff/login')
+  @Post('/staff/login')
   async login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {
     try {
       const user = await this.otpService.getUserByUsername(loginDto.username);
