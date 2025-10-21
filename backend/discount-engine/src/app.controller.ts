@@ -10,7 +10,7 @@ import {
   CustomerSegmentRule,
 } from './models/discount-rule';
 
-@Controller('api/discount')
+@Controller('api/discounts')
 export class AppController {
   private readonly logger = new Logger('DiscountEngineController');
 
@@ -80,10 +80,10 @@ export class AppController {
   }
 
   /**
-   * Alias: /api/discounts/rules
+   * Alias: /api/discounts/rules (for Postman with tenant_id query param)
    * GET /api/discounts/rules?tenant_id=...&tenant=...
    */
-  @Get('/discounts/rules')
+  @Get('/rules-alt')
   getDiscountsRulesAlias(
     @Query('tenant_id') tenantId?: string,
     @Query('tenant') tenantAlt?: string,
@@ -138,7 +138,7 @@ export class AppController {
    * Alias: /api/discounts/apply
    * POST /api/discounts/apply
    */
-  @Post('/discounts/apply')
+  @Post('/apply-alt')
   applyDiscountsAlias(@Body() context: DiscountEvaluationContext) {
     this.logger.log(`Applying discounts for order ${context.orderId} (discounts alias)`);
 
