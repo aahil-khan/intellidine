@@ -87,8 +87,8 @@ export class AppController {
         throw new UnauthorizedException('Invalid credentials');
       }
 
-      // Generate JWT token
-      const { token, expiresAt } = JwtUtils.generateToken(user.id, 'staff');
+      // Generate JWT token (include tenant_id for staff so they don't need to pass it in requests)
+      const { token, expiresAt } = JwtUtils.generateToken(user.id, 'staff', user.tenant_id || undefined);
 
       // Create session in Redis
       await this.otpService.createSession(user.id, token);

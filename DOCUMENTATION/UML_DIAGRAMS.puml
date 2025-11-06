@@ -1,0 +1,707 @@
+@startuml IntelliDine System Diagrams
+
+' =============================================================================
+' DIAGRAM 1: SYSTEM CONTEXT - High Level Overview
+' =============================================================================
+
+@startuml(id=SystemContext)
+!define AWSPUML https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v14.0/dist
+!include AWSPUML/AWSCommon.puml
+
+title IntelliDine System Context
+
+actor Customer as cust
+actor Staff as staff
+
+rectangle "Restaurant (Tenant)" {
+  component "QR Code at Table" as qr
+  component "Kitchen Display" as kds
+  component "POS System" as pos
+}
+
+rectangle "IntelliDine SaaS Backend" {
+  component "API Gateway\n(3100)" as gateway
+  component "Auth Service\n(3101)" as auth
+  component "Order Service\n(3102)" as order
+  component "Menu Service\n(3103)" as menu
+  component "Inventory\n(3104)" as inv
+  component "Payment\n(3105)" as pay
+  component "Notification\n(3106)" as notif
+  component "Analytics\n(3107)" as analytics
+  component "Discount Engine\n(3108)" as discount
+  component "ML Service\n(8000)" as ml
+}
+
+rectangle "Data & Infrastructure" {
+  database "PostgreSQL" as db
+  component "Redis" as redis
+  component "Kafka" as kafka
+  component "Prometheus" as prom
+}
+
+cust --> qr : Scans
+cust --> customer_app : Uses Mobile
+customer_app --> gateway : HTTPS
+staff --> staff_app : Uses POS/KDS
+staff_app --> gateway : HTTPS
+
+gateway --> auth : Forward Auth
+gateway --> order : Forward Orders
+gateway --> menu : Forward Menu
+gateway --> pay : Forward Payments
+gateway --> inv : Forward Inventory
+gateway --> notif : Notifications
+gateway --> analytics : Analytics
+gateway --> discount : Discounts
+
+auth --> db
+auth --> redis
+
+order --> db
+order --> kafka
+
+menu --> db
+menu --> redis
+
+pay --> db
+
+inv --> db
+inv --> kafka
+
+notif --> kafka : Consume Events
+notif --> redis
+
+analytics --> db
+analytics --> kafka
+
+discount --> ml
+
+kafka --> prom
+
+@enduml
+
+' =============================================================================
+' DIAGRAM 2: COLLABORATION DIAGRAM - Customer Order Flow
+' =============================================================================
+
+@startuml(id=CustomerOrderCollaboration)
+title Customer Order Collaboration Diagram
+
+participant Customer as C
+participant Frontend as F
+participant "API Gateway" as GW
+participant "Auth Service" as Auth
+participant "Menu Service" as Menu
+participant "Order Service" as Order
+participant "Discount Engine" as Discount
+participant "Payment Service" as Pay
+participant "Inventory Service" as Inv
+participant "Notification Service" as N
+participant "Database" as DB
+participant "Kafka" as K
+
+C -> F: 1. Scans QR Code\n(extracts tenant_id)
+C -> F: 2. Opens Menu
+F -> GW: 3. GET /api/menu/items?tenant_id=X
+GW -> Menu: Forward Request
+Menu -> DB: Query items
+DB -> Menu: Return items
+Menu -> GW: Response
+GW -> F: Return menu
+
+C -> F: 4. Add to cart\n(2x Paneer, 1x Naan)
+C -> F: 5. Request OTP
+F -> GW: 6. POST /api/auth/customer/otp\n(phone: 9876543210)
+GW -> Auth: Forward
+Auth -> DB: Store OTP hash
+Auth -> N: Send SMS
+N -> C: 7. SMS: "OTP 123456"
+
+C -> F: 8. Enter OTP
+F -> GW: 9. POST /api/auth/customer/verify\n(phone, otp)
+GW -> Auth: Forward
+Auth -> DB: Verify OTP
+Auth -> Auth: Generate JWT\n(no tenant_id)
+Auth -> GW: Return {token}
+GW -> F: Return token
+F -> F: Store JWT
+
+C -> F: 10. Checkout
+F -> GW: 11. POST /api/orders?tenant_id=X\nBody: {items, table_id}\nHeader: Authorization: Bearer {token}
+
+GW -> Order: Forward
+Order -> Discount: 12. Apply discount\n(current_time, inventory_level)
+Discount -> ML: 13. Predict discount %
+ML -> Discount: 14. Return 22%
+Discount -> Order: Return discount
+
+Order -> DB: 15. Create order record
+Order -> Inv: 16. Publish order.created
+K -> Inv: Consume event
+Inv -> Inv: Reserve stock
+Inv -> DB: Update inventory
+
+K -> N: Consume event
+N -> C: 17. SMS: "Order received!\n2 Paneer, 1 Naan"
+
+K -> analytics: Consume event
+analytics -> DB: Record sale
+
+GW -> F: 18. Return {order_id, total}
+F -> C: 19. Display "Order Confirmed!"
+
+C -> F: 20. Initiate Payment
+F -> GW: 21. POST /api/payments/create-razorpay
+GW -> Pay: Forward
+Pay -> Pay: Generate Razorpay order
+Pay -> F: Return payment_key
+F -> F: Open Razorpay checkout
+
+C -> F: 22. Complete Razorpay payment
+F -> GW: 23. POST /api/payments/verify
+GW -> Pay: Forward
+Pay -> Pay: Verify signature
+Pay -> DB: Mark payment completed
+Pay -> K: Publish payment.completed
+
+K -> Order: Consume event
+Order -> DB: Update order status
+
+K -> N: Consume event
+N -> C: 24. SMS: "Payment received!"
+
+@enduml
+
+' =============================================================================
+' DIAGRAM 3: SEQUENCE DIAGRAM - Staff Order Management
+' =============================================================================
+
+@startuml(id=StaffOrderManagement)
+title Staff Order Status Management Flow
+
+actor Staff
+participant "Staff App" as App
+participant "API Gateway" as GW
+participant "Auth Service" as Auth
+participant "Order Service" as Order
+participant "Notification Service" as Notif
+participant "Database" as DB
+participant "Kafka" as K
+
+Staff -> App: 1. Open Staff Dashboard
+App -> GW: 2. POST /api/auth/staff/login\n(username, password, tenant_id)
+GW -> Auth: Forward
+Auth -> DB: Verify credentials
+Auth -> Auth: Generate JWT\n(with tenant_id claim)
+Auth -> GW: Return {token, tenant_id}
+GW -> App: Return token
+App -> App: Store JWT
+
+App -> GW: 3. GET /api/orders?status=PENDING\n&tenant_id=X
+GW -> Order: Forward
+Order -> DB: Query orders\n(WHERE tenant_id=X, status=PENDING)
+DB -> Order: Return orders
+Order -> GW: Response
+GW -> App: Display pending orders
+
+Staff -> App: 4. Click "Start Cooking" on order #123
+
+App -> GW: 5. PATCH /api/orders/123/status\n&tenant_id=X (extracted from JWT)\nBody: {status: PREPARING}
+GW -> Order: Forward
+Order -> DB: Update order status
+DB -> Order: ✓ Updated
+
+Order -> K: Publish order.status_changed
+K -> Notif: Consume event
+Notif -> Notif: Prepare SMS
+Notif -> Staff: SMS: "Order 123 cooking"
+
+GW -> App: Return {status: PREPARING}
+App -> Staff: 6. Show "Order 123 - PREPARING"
+
+' === 15 minutes later ===
+
+Staff -> App: 7. Order ready, click "Mark Ready"
+
+App -> GW: 8. PATCH /api/orders/123/status\n&tenant_id=X\nBody: {status: READY}
+GW -> Order: Forward
+Order -> DB: Update order status
+Order -> K: Publish event
+
+K -> Notif: Consume
+Notif -> Notif: Generate SMS
+Notif -> Staff: SMS: "Order 123 ready!\nNotify customer"
+
+GW -> App: Return success
+App -> Staff: 9. Show "Order 123 - READY"
+
+@enduml
+
+' =============================================================================
+' DIAGRAM 4: CLASS DIAGRAM - Core Domain Models
+' =============================================================================
+
+@startuml(id=ClassDiagram)
+title IntelliDine Domain Class Diagram
+
+enum UserRole {
+  MANAGER
+  KITCHEN_STAFF
+  WAITER
+  CUSTOMER
+}
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  READY
+  SERVED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  RAZORPAY
+  CASH
+  WALLET
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+class Tenant {
+  id: UUID
+  name: String
+  owner_email: String
+  is_active: Boolean
+  created_at: DateTime
+  --
+  getUsers(): User[]
+  getTables(): Table[]
+  getMenuItems(): MenuItem[]
+}
+
+class User {
+  id: UUID
+  tenant_id: UUID (FK)
+  username: String
+  email: String
+  password_hash: String
+  role: UserRole
+  is_active: Boolean
+  created_at: DateTime
+  --
+  verifyPassword(pwd): Boolean
+}
+
+class Customer {
+  id: UUID
+  phone_number: String (UNIQUE)
+  name: String
+  total_orders: Int
+  created_at: DateTime
+  --
+  getOrders(): Order[]
+}
+
+class Table {
+  id: UUID
+  tenant_id: UUID (FK)
+  table_number: Int
+  capacity: Int
+  qr_code_url: String
+  is_active: Boolean
+  --
+  getOrders(): Order[]
+}
+
+class MenuItem {
+  id: UUID
+  tenant_id: UUID (FK)
+  category_id: UUID (FK)
+  name: String
+  description: String
+  price: Decimal
+  cost_price: Decimal
+  prep_time_minutes: Int
+  is_available: Boolean
+  is_deleted: Boolean
+  created_at: DateTime
+  --
+  calculateProfit(): Decimal
+}
+
+class Category {
+  id: UUID
+  name: String
+  display_order: Int
+  --
+  getItems(): MenuItem[]
+}
+
+class Order {
+  id: UUID
+  tenant_id: UUID (FK)
+  customer_id: UUID (FK)
+  table_id: UUID (FK)
+  status: OrderStatus
+  items: OrderItem[]
+  subtotal: Decimal
+  tax: Decimal
+  discount: Decimal
+  total_amount: Decimal
+  created_at: DateTime
+  completed_at: DateTime (nullable)
+  --
+  getTotal(): Decimal
+  canTransitionTo(newStatus): Boolean
+  cancel(reason): Void
+}
+
+class OrderItem {
+  id: UUID
+  order_id: UUID (FK)
+  menu_item_id: UUID (FK)
+  quantity: Int
+  unit_price: Decimal
+  subtotal: Decimal
+  --
+  calculateSubtotal(): Decimal
+}
+
+class Payment {
+  id: UUID
+  order_id: UUID (FK)
+  tenant_id: UUID (FK)
+  amount: Decimal
+  method: PaymentMethod
+  status: PaymentStatus
+  razorpay_order_id: String (nullable)
+  razorpay_payment_id: String (nullable)
+  created_at: DateTime
+  --
+  verify(): Boolean
+  refund(amount): Boolean
+}
+
+class Inventory {
+  id: UUID
+  tenant_id: UUID (FK)
+  item_name: String
+  quantity: Decimal
+  unit: String
+  reorder_level: Decimal
+  cost_price: Decimal
+  expiry_date: DateTime (nullable)
+  --
+  isLowStock(): Boolean
+  deduct(amount): Void
+  refill(amount): Void
+}
+
+class Discount {
+  id: UUID
+  tenant_id: UUID (FK)
+  name: String
+  discount_percentage: Decimal
+  start_time: DateTime
+  end_time: DateTime
+  conditions: JSON
+  --
+  isActive(): Boolean
+  evaluate(order): Decimal
+}
+
+class Notification {
+  id: UUID
+  recipient: String
+  type: String
+  message: String
+  status: String
+  sent_at: DateTime (nullable)
+  --
+  send(): Boolean
+}
+
+' Relationships
+Tenant "1" -- "*" User
+Tenant "1" -- "*" Table
+Tenant "1" -- "*" MenuItem
+Tenant "1" -- "*" Order
+Tenant "1" -- "*" Inventory
+Tenant "1" -- "*" Payment
+Tenant "1" -- "*" Discount
+
+Category "1" -- "*" MenuItem
+
+Table "1" -- "*" Order
+Order "1" -- "*" OrderItem
+
+Customer "1" -- "*" Order
+MenuItem "1" -- "*" OrderItem
+
+Payment "1" -- "1" Order
+Discount "0..1" -- "*" Order
+
+Order "1" -- "*" Notification
+
+@enduml
+
+' =============================================================================
+' DIAGRAM 5: COMPONENT DIAGRAM - Service Architecture
+' =============================================================================
+
+@startuml(id=ComponentDiagram)
+title IntelliDine Microservices Architecture
+
+package "Client Layer" {
+  component [Customer Mobile App] as CustApp
+  component [Staff POS/KDS] as StaffApp
+}
+
+package "API Layer" {
+  component [API Gateway\n(3100)] as Gateway
+}
+
+package "Microservices" {
+  component [Auth Service\n(3101)] as AuthSvc
+  component [Menu Service\n(3103)] as MenuSvc
+  component [Order Service\n(3102)] as OrderSvc
+  component [Payment Service\n(3105)] as PaySvc
+  component [Inventory Service\n(3104)] as InvSvc
+  component [Notification Service\n(3106)] as NotifSvc
+  component [Analytics Service\n(3107)] as AnalyticsSvc
+  component [Discount Engine\n(3108)] as DiscountSvc
+  component [ML Service\n(8000)] as MLSvc
+}
+
+package "Data Layer" {
+  database [PostgreSQL] as DB
+  component [Redis Cache] as Redis
+}
+
+package "Message Broker" {
+  component [Apache Kafka] as Kafka
+}
+
+package "Observability" {
+  component [Prometheus] as Prom
+  component [Grafana] as Grafana
+}
+
+' Client to Gateway
+CustApp --> Gateway : HTTPS
+StaffApp --> Gateway : HTTPS
+
+' Gateway to Services
+Gateway --> AuthSvc
+Gateway --> MenuSvc
+Gateway --> OrderSvc
+Gateway --> PaySvc
+Gateway --> InvSvc
+Gateway --> NotifSvc
+Gateway --> AnalyticsSvc
+Gateway --> DiscountSvc
+
+' Services to Database
+AuthSvc --> DB
+MenuSvc --> DB
+OrderSvc --> DB
+PaySvc --> DB
+InvSvc --> DB
+AnalyticsSvc --> DB
+
+' Services to Cache
+MenuSvc --> Redis
+AuthSvc --> Redis
+
+' Services to Message Broker
+OrderSvc --> Kafka
+InvSvc --> Kafka
+PaySvc --> Kafka
+NotifSvc --> Kafka : Consume
+AnalyticsSvc --> Kafka : Consume
+
+' Discount Engine
+DiscountSvc --> MLSvc
+DiscountSvc --> OrderSvc
+
+' Observability
+AuthSvc ..> Prom
+OrderSvc ..> Prom
+PaySvc ..> Prom
+InvSvc ..> Prom
+Prom --> Grafana
+
+@enduml
+
+' =============================================================================
+' DIAGRAM 6: STATE DIAGRAM - Order Lifecycle
+' =============================================================================
+
+@startuml(id=OrderStateMachine)
+title Order Lifecycle State Machine
+
+[*] --> PENDING : Order Created
+
+PENDING --> PREPARING : Staff starts cooking
+PENDING --> CANCELLED : Customer/Staff cancels\n(before preparation)
+
+PREPARING --> READY : Cooking complete
+PREPARING --> CANCELLED : Staff cancels\n(during preparation)
+
+READY --> SERVED : Waiter delivers
+
+SERVED --> COMPLETED : Payment received
+SERVED --> PENDING : Customer changes mind\n(rare, manual override)
+
+COMPLETED --> [*]
+
+CANCELLED --> [*]
+
+note right of PENDING
+  - Items reserved in inventory
+  - Notifications sent
+  - Discount applied
+  - Payment pending
+end note
+
+note right of PREPARING
+  - Kitchen staff working
+  - Prep time tracking
+  - No cancellations allowed
+end note
+
+note right of READY
+  - Waiting for customer
+  - Notifications sent
+  - Timer running
+end note
+
+note right of SERVED
+  - With customer
+  - Payment collection
+end note
+
+note right of COMPLETED
+  - All tasks done
+  - Order history recorded
+  - Analytics updated
+end note
+
+@enduml
+
+' =============================================================================
+' DIAGRAM 7: ACTIVITY DIAGRAM - Payment Processing
+' =============================================================================
+
+@startuml(id=PaymentActivity)
+title Payment Processing Activity Diagram
+
+start
+:Order ready for payment;
+
+if (Payment method?) then (Online - Razorpay)
+  :1. Create Razorpay order;
+  :2. Open checkout modal;
+  :3. Customer enters card/UPI;
+  :4. Submit payment;
+  
+  if (Payment success?) then (Yes)
+    :5. Verify Razorpay signature;
+    :6. Mark payment COMPLETED;
+    :7. Update order status;
+  else (No)
+    :5. Mark payment FAILED;
+    :6. Show error to customer;
+    :7. Offer retry;
+  endif
+  
+else (Cash)
+  :1. Staff receives cash;
+  :2. Enter amount received;
+  :3. System calculates change;
+  :4. Mark payment COMPLETED;
+endif
+
+:8. Publish payment.completed event;
+:9. Order Service updates order;
+:10. Notification Service sends SMS;
+:11. Analytics records revenue;
+
+stop
+
+@enduml
+
+' =============================================================================
+' DIAGRAM 8: USE CASE DIAGRAM - System Actors & Use Cases
+' =============================================================================
+
+@startuml(id=UseCaseDiagram)
+title IntelliDine Use Cases
+
+actor Customer as C
+actor Staff as S
+actor Manager as M
+actor System as SYS
+
+rectangle IntelliDine {
+  usecase UC1 as "Scan QR & Login"
+  usecase UC2 as "Browse Menu"
+  usecase UC3 as "Place Order"
+  usecase UC4 as "Track Order Status"
+  usecase UC5 as "Make Payment"
+  usecase UC6 as "View Receipt"
+  
+  usecase UC7 as "Login as Staff"
+  usecase UC8 as "View Pending Orders"
+  usecase UC9 as "Update Order Status"
+  usecase UC10 as "Manage Inventory"
+  usecase UC11 as "Process Refund"
+  
+  usecase UC12 as "View Analytics"
+  usecase UC13 as "Manage Menu Items"
+  usecase UC14 as "View Reports"
+  usecase UC15 as "Configure Discounts"
+  
+  usecase UC16 as "Apply ML Discount"
+  usecase UC17 as "Send Notifications"
+  usecase UC18 as "Reserve Inventory"
+}
+
+C --> UC1
+C --> UC2
+C --> UC3
+C --> UC4
+C --> UC5
+C --> UC6
+
+S --> UC7
+S --> UC8
+S --> UC9
+S --> UC10
+S --> UC11
+
+M --> UC7
+M --> UC12
+M --> UC13
+M --> UC14
+M --> UC15
+
+SYS --> UC16
+SYS --> UC17
+SYS --> UC18
+
+UC3 .> UC16 : <<include>>
+UC3 .> UC17 : <<include>>
+UC3 .> UC18 : <<include>>
+
+UC9 .> UC17 : <<include>>
+
+@enduml
+
+@enduml

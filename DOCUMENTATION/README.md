@@ -10,6 +10,7 @@ This folder contains **comprehensive documentation** about everything happening 
 
 ### Main Overview
 - **[SYSTEM_OVERVIEW.md](./SYSTEM_OVERVIEW.md)** - High-level architecture, data flow, and system interactions
+- **[ARCHITECTURE_AT_A_GLANCE.md](./ARCHITECTURE_AT_A_GLANCE.md)** - One-page reference (tables, diagrams, patterns)
 
 ### Individual Service Guides
 Each microservice has detailed documentation:
@@ -36,6 +37,13 @@ Each microservice has detailed documentation:
 - **[PAYMENT_WORKFLOW.md](./workflows/PAYMENT_WORKFLOW.md)** - Payment processing, refunds, cash vs online
 - **[DISCOUNT_APPLICATION.md](./workflows/DISCOUNT_APPLICATION.md)** - How ML discounts are calculated and applied
 - **[INVENTORY_WORKFLOW.md](./workflows/INVENTORY_WORKFLOW.md)** - Stock updates, reservations, adjustments
+
+### Architecture & Design
+- **[UML_DIAGRAMS.md](./UML_DIAGRAMS.md)** - Comprehensive PlantUML diagrams (collaboration, sequence, class, database)
+- **[ARCHITECTURE_DIAGRAMS_ASCII.md](./ARCHITECTURE_DIAGRAMS_ASCII.md)** - Visual ASCII diagrams of system components, flows, and relationships
+- **[diagrams/](./diagrams/)** - Rendered SVG diagrams:
+  - `IntelliDine_System_Collaboration.svg` - System components & interactions
+  - `IntelliDine_Class_Diagram.svg` - Database entities & relationships
 
 ### Quick References
 - **[API_ENDPOINTS.md](./API_ENDPOINTS.md)** - All 35+ endpoints with examples

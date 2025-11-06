@@ -1,0 +1,89 @@
+@startuml IntelliDine_System_Collaboration
+!define AWSPUML https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v14.0/dist
+skinparam actorBackgroundColor #e1f5ff
+skinparam componentBackgroundColor #fff3e0
+skinparam packageBackgroundColor #f3e5f5
+skinparam componentBorderColor #333333
+
+actor Customer as cust
+actor Staff as staff
+
+package "Client Layer" {
+  component [QR Scanner\n& Menu] as CustomerPhone
+  component [Kitchen Display\nSystem] as KitchenApp
+}
+
+package "API Layer" {
+  component [API Gateway\nPort 3100\n(JWT Validation)] as Gateway
+}
+
+package "Business Logic Layer\n(Microservices)" {
+  component [Auth Service\n(OTP/Login)] as AuthService
+  component [Menu Service\n(Browse Items)] as MenuService
+  component [Order Service\n(Create/Track)] as OrderService
+  component [Payment Service\n(Razorpay/Cash)] as PaymentService
+  component [Discount Engine\n(ML Pricing)] as DiscountEngine
+  component [Inventory Service\n(Stock Mgmt)] as InventoryService
+  component [Notification Service\n(SMS/WebSocket)] as NotificationService
+  component [Analytics Service\n(Metrics/Reporting)] as AnalyticsService
+}
+
+package "Data & Event Layer" {
+  database [PostgreSQL\nMulti-Tenant] as DB
+  database [Redis\nCache & Sessions] as Cache
+  queue [Kafka\nEvent Stream] as Kafka
+}
+
+package "External Services" {
+  component [Razorpay\n(Payment Gateway)] as Razorpay
+  component [SMS/SNS\n(Notifications)] as SMS
+  component [ML Model\n(XGBoost)] as MLModel
+}
+
+cust --> CustomerPhone: Scans QR\nPhone Order
+staff --> KitchenApp: Kitchen\nManagement
+
+CustomerPhone --> Gateway: Browse Menu\nCreate Order\nCheck Status
+note on link: HTTP/HTTPS\nJWT Token
+
+KitchenApp --> Gateway: View Orders\nUpdate Status\nProcess Payment
+note on link: HTTP/HTTPS\nJWT Token
+
+Gateway --> AuthService: Route /api/auth
+Gateway --> MenuService: Route /api/menu
+Gateway --> OrderService: Route /api/orders
+Gateway --> PaymentService: Route /api/payments
+Gateway --> DiscountEngine: Route /api/discounts
+Gateway --> InventoryService: Route /api/inventory
+Gateway --> NotificationService: Route /api/notifications
+Gateway --> AnalyticsService: Route /api/analytics
+
+AuthService --> Cache: Query OTP
+AuthService --> DB: Create User
+AuthService --> SMS: Send SMS
+
+MenuService --> DB: Query Menu
+MenuService --> Cache: Cache 1hr
+
+OrderService --> DB: Create Order
+OrderService --> MenuService: Get Items
+OrderService --> DiscountEngine: Get Discount
+OrderService --> Kafka: Publish Events
+
+PaymentService --> DB: Create Payment
+PaymentService --> Razorpay: Verify Webhook
+PaymentService --> Kafka: Publish Events
+
+DiscountEngine --> MLModel: Get Prediction
+DiscountEngine --> DB: Store Rules
+
+InventoryService --> DB: Track Stock
+InventoryService --> Kafka: Consume/Publish
+
+NotificationService --> Kafka: Consume Events
+NotificationService --> SMS: Send SMS
+
+AnalyticsService --> DB: Aggregate Data
+AnalyticsService --> Kafka: Consume Events
+
+@enduml

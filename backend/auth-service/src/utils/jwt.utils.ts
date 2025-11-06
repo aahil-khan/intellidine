@@ -3,6 +3,7 @@ import * as jwt from 'jsonwebtoken';
 export interface JwtPayload {
   sub: string; // user ID
   type: 'customer' | 'staff'; // user type
+  tenant_id?: string; // optional, only for staff
   iat: number;
   exp: number;
 }
@@ -13,11 +14,18 @@ export class JwtUtils {
 
   /**
    * Generate JWT token for a user
+   * For staff: include tenant_id so they don't need to pass it in requests
+   * For customers: no tenant_id (they get it from QR code)
    */
-  static generateToken(userId: string, type: 'customer' | 'staff'): { token: string; expiresAt: string } {
+  static generateToken(
+    userId: string,
+    type: 'customer' | 'staff',
+    tenantId?: string
+  ): { token: string; expiresAt: string } {
     const payload: Omit<JwtPayload, 'iat' | 'exp'> = {
       sub: userId,
       type,
+      ...(tenantId && { tenant_id: tenantId }),
     };
 
     const token = jwt.sign(payload, this.JWT_SECRET, {

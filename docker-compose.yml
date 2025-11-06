@@ -55,6 +55,8 @@ services:
       - intellidine-network
 
   # API Gateway
+  # IMPORTANT: Any service using @shared/auth JwtGuard/JwtModule MUST have JWT_SECRET set
+  # to the same value as auth-service for JWT verification to work.
   api-gateway:
     container_name: intellidine-api-gateway
     build:
@@ -116,6 +118,7 @@ services:
       - "3102:3102"
     environment:
       - DATABASE_URL=postgresql://admin:${DB_PASSWORD}@postgres:5432/intellidine
+      - JWT_SECRET=${JWT_SECRET}
       - KAFKA_BROKER=kafka:9092
       - NODE_ENV=development
       - PORT=3102

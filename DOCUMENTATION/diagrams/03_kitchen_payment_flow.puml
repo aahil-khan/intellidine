@@ -1,0 +1,64 @@
+@startuml Kitchen_Payment_Flow
+actor Staff as Kitchen
+actor Customer
+participant "Kitchen\nDisplay" as KDS
+participant "API Gateway" as Gateway
+participant "Order Service" as Order
+participant "Payment Service" as Payment
+participant "Kafka" as Kafka
+participant "Notification\nService" as Notif
+database "PostgreSQL" as DB
+participant "Razorpay" as Razorpay
+
+Kitchen ->> KDS: 1. Opens app
+KDS ->> Order: GET /api/orders?status=PENDING\n?tenant_id=...
+Order ->> DB: SELECT orders WHERE status, tenant_id
+Order -->> KDS: 2. Pending orders [order-1, order-2, ...]
+
+KDS ->> KDS: 3. Display orders on kitchen screen
+
+Kitchen ->> KDS: 4. Start cooking order-1
+KDS ->> Order: PATCH /api/orders/{order_id}/status\n?tenant_id=...\n{status: "PREPARING"}
+Order ->> DB: UPDATE order status = "PREPARING"
+Order ->> Kafka: Publish: order.status_changed\n{order_id, status: "PREPARING"}
+Order -->> KDS: Status updated
+
+Kafka ->> Notif: Consume order.status_changed
+Notif ->> Customer: 5. SMS: "Your order is being prepared"
+
+Kitchen ->> KDS: 6. Food ready, mark complete
+KDS ->> Order: PATCH /api/orders/{order_id}/status\n{status: "READY"}
+Order ->> DB: UPDATE order status = "READY"
+Order ->> Kafka: Publish: order.status_changed\n{order_id, status: "READY"}
+
+Kafka ->> Notif: Consume
+Notif ->> Customer: 7. SMS: "Your order is ready!"
+
+Customer ->> Phone: 8. Clicks "Pay"
+Phone ->> Payment: POST /api/payments/create-razorpay-order\n?tenant_id=...\n{order_id, amount: 719.80}
+Payment ->> Razorpay: Create order (₹719.80)
+Razorpay -->> Payment: razorpay_order_id
+Payment -->> Phone: 9. Razorpay modal data
+
+Phone ->> Razorpay: 10. Customer enters card details
+Razorpay ->> Razorpay: Process payment
+Razorpay ->> Payment: 11. Webhook: payment.authorized\n{razorpay_order_id, razorpay_payment_id, signature}
+
+Payment ->> Payment: Verify signature
+Payment ->> DB: Create payment record\n{order_id, status: "COMPLETED", method: "card"}
+Payment ->> Kafka: Publish: payment.completed\n{order_id, amount, method}
+Payment -->> Razorpay: Webhook response: OK
+
+Kafka ->> Order: Consume payment.completed
+Order ->> DB: UPDATE order status = "COMPLETED"
+Order ->> Kafka: Publish: order.completed
+
+Kafka ->> Analytics: Consume: order.completed + payment.completed
+Analytics ->> DB: Update revenue metrics
+
+Kafka ->> Notif: Consume
+Notif ->> Customer: 12. SMS: "Payment received. Thank you!"
+
+Phone -->> Customer: 13. Order complete ✓
+
+@enduml

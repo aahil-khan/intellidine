@@ -1,0 +1,68 @@
+@startuml Customer_Order_Flow
+actor Customer
+participant "Customer\nPhone" as Phone
+participant "API Gateway" as Gateway
+participant "Auth Service" as Auth
+participant "Order Service" as Order
+participant "Menu Service" as Menu
+participant "Discount Engine" as Discount
+participant "Kafka" as Kafka
+participant "Notification\nService" as Notif
+participant "Analytics\nService" as Analytics
+database "PostgreSQL" as DB
+database "Redis" as Redis
+
+Customer ->> Phone: 1. Scans QR at Table
+Phone ->> Auth: 2. POST /api/auth/customer/request-otp\n{phone: "9876543210", tenant_id from QR}
+Auth ->> Redis: Generate OTP (5 min expiry)
+Auth ->> Auth: Send SMS via Twilio/SNS
+Auth -->> Phone: OTP sent
+
+Customer ->> Phone: 3. Enter OTP in app
+Phone ->> Auth: 4. POST /api/auth/customer/verify-otp\n{phone, otp}
+Auth ->> Redis: Verify OTP
+Auth ->> DB: Fetch/Create Customer
+Auth ->> Auth: Generate JWT\n{sub: customer_id, type: "customer"}
+Auth -->> Phone: 5. JWT Token + expires_at
+
+Phone ->> Menu: 6. GET /api/menu/categories\n?tenant_id=...
+Menu ->> Redis: Check cache
+alt Cache Hit
+  Menu -->> Phone: Categories (cached)
+else Cache Miss
+  Menu ->> DB: SELECT categories WHERE tenant_id
+  Menu ->> Redis: Cache for 1 hour
+  Menu -->> Phone: Categories
+end
+
+Phone ->> Menu: 7. GET /api/menu/items?category_id=...\n?tenant_id=...
+Menu ->> DB: SELECT menu_items WHERE category_id, tenant_id
+Menu -->> Phone: Items with prices
+
+Customer ->> Phone: 8. Add items to cart & review
+
+Phone ->> Discount: 9. POST /api/discounts/apply\n{items: [...], tenant_id: ...}
+Discount ->> MLService: Call ML for predictions\n(time, demand, inventory)
+Discount -->> Phone: Discount %
+
+Phone ->> Order: 10. POST /api/orders?tenant_id=...\n{table_id, items: [{id, qty}]}
+Order ->> Menu: Verify items exist
+Order ->> DB: Create order record
+Order ->> Order: Calculate totals\n(subtotal + GST + discount)
+Order ->> Kafka: Publish: order.created\n{order_id, items, total, tenant_id}
+Order -->> Phone: 11. Order confirmation\n{order_id, total, ETA}
+
+Kafka ->> Notif: 12a. Consume order.created
+Notif ->> Notif: Send SMS: "Order received"
+
+Kafka ->> Analytics: 12b. Consume order.created
+Analytics ->> DB: Record order metrics
+
+Kafka ->> InventoryService: 12c. Consume order.created
+InventoryService ->> DB: Reserve stock for items
+
+Phone ->> Order: 13. Poll: GET /api/orders/{order_id}\n?tenant_id=...
+Order ->> DB: SELECT order WHERE id, tenant_id
+Order -->> Phone: 14. {status: "PENDING", ETA: "15 mins"}
+
+@enduml

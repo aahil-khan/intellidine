@@ -1,0 +1,207 @@
+@startuml Core_Entity_Classes
+skinparam classBackgroundColor #f9f9f9
+skinparam classBorderColor #333333
+skinparam classAttributeIconSize 0
+
+class Tenant {
+  - id: UUID [PK]
+  - name: String
+  - email: String
+  - phone: String
+  - address: String
+  - owner_id: UUID
+  - is_active: Boolean
+  - created_at: DateTime
+  - updated_at: DateTime
+  --
+  + getId(): UUID
+  + getName(): String
+  + isActive(): Boolean
+}
+
+class User {
+  - id: UUID [PK]
+  - tenant_id: UUID [FK]
+  - username: String [UNIQUE]
+  - email: String [UNIQUE]
+  - password_hash: String
+  - role: Enum (MANAGER|KITCHEN_STAFF|WAITER)
+  - is_active: Boolean
+  - created_at: DateTime
+  --
+  + getId(): UUID
+  + getTenantId(): UUID
+  + getRole(): Role
+  + verifyPassword(pwd: String): Boolean
+}
+
+class Customer {
+  - id: UUID [PK]
+  - phone_number: String [UNIQUE]
+  - name: String
+  - email: String
+  - total_orders: Int
+  - total_spent: Decimal
+  - created_at: DateTime
+  --
+  + getId(): UUID
+  + getPhoneNumber(): String
+  + getTotalOrders(): Int
+}
+
+class Table {
+  - id: UUID [PK]
+  - tenant_id: UUID [FK]
+  - table_number: Int
+  - capacity: Int
+  - qr_code_url: String
+  - is_active: Boolean
+  --
+  + getId(): UUID
+  + getTenantId(): UUID
+  + getQRCodeUrl(): String
+  + getCapacity(): Int
+}
+
+class MenuCategory {
+  - id: String [PK]
+  - tenant_id: UUID [FK]
+  - name: String
+  - description: String
+  - display_order: Int
+  --
+  + getId(): String
+  + getName(): String
+  + getDisplayOrder(): Int
+}
+
+class MenuItem {
+  - id: UUID [PK]
+  - tenant_id: UUID [FK]
+  - category_id: String [FK]
+  - name: String
+  - description: String
+  - price: Decimal
+  - cost_price: Decimal
+  - discount_percentage: Decimal
+  - is_available: Boolean
+  - prep_time_minutes: Int
+  - dietary_tags: String[]
+  - image_url: String
+  --
+  + getId(): UUID
+  + getName(): String
+  + getPrice(): Decimal
+  + getPrepTime(): Int
+  + isAvailable(): Boolean
+}
+
+class Order {
+  - id: UUID [PK]
+  - tenant_id: UUID [FK]
+  - customer_id: UUID [FK]
+  - table_id: UUID [FK]
+  - status: Enum
+  - subtotal: Decimal
+  - tax: Decimal
+  - discount: Decimal
+  - total_amount: Decimal
+  - created_at: DateTime
+  - completed_at: DateTime
+  --
+  + getId(): UUID
+  + getTenantId(): UUID
+  + getStatus(): OrderStatus
+  + getTotal(): Decimal
+  + canTransitionTo(status: OrderStatus): Boolean
+  + calculateTax(): Decimal
+}
+
+class OrderItem {
+  - id: UUID [PK]
+  - order_id: UUID [FK]
+  - menu_item_id: UUID [FK]
+  - quantity: Int
+  - unit_price: Decimal
+  - subtotal: Decimal
+  --
+  + getId(): UUID
+  + getOrderId(): UUID
+  + getQuantity(): Int
+  + getPrice(): Decimal
+}
+
+class Payment {
+  - id: UUID [PK]
+  - tenant_id: UUID [FK]
+  - order_id: UUID [FK]
+  - method: Enum (RAZORPAY|CASH)
+  - amount: Decimal
+  - status: Enum
+  - razorpay_order_id: String
+  - razorpay_payment_id: String
+  - transaction_id: String
+  - created_at: DateTime
+  --
+  + getId(): UUID
+  + getOrderId(): UUID
+  + getAmount(): Decimal
+  + getStatus(): PaymentStatus
+  + isSuccessful(): Boolean
+}
+
+class Inventory {
+  - id: UUID [PK]
+  - tenant_id: UUID [FK]
+  - item_name: String
+  - quantity: Decimal
+  - unit: String (KG|LITER|PIECE)
+  - reorder_level: Decimal
+  - cost_price: Decimal
+  - expiry_date: DateTime
+  - last_updated: DateTime
+  --
+  + getId(): UUID
+  + getTenantId(): UUID
+  + getQuantity(): Decimal
+  + isLowStock(): Boolean
+  + deduct(amount: Decimal): void
+}
+
+class OTPVerification {
+  - id: UUID [PK]
+  - phone_number: String
+  - otp_hash: String
+  - expires_at: DateTime
+  - attempts: Int
+  - verified_at: DateTime
+  --
+  + getId(): UUID
+  + getPhoneNumber(): String
+  + isExpired(): Boolean
+  + isVerified(): Boolean
+}
+
+' Relationships
+Tenant "1" -- "many" User: owns
+Tenant "1" -- "many" Table: has
+Tenant "1" -- "many" MenuItem: owns menu
+Tenant "1" -- "many" Order: receives
+Tenant "1" -- "many" Inventory: manages
+Tenant "1" -- "many" Payment: processes
+
+User "1" -- "many" Order: creates/updates
+
+MenuItem "1" -- "many" OrderItem: added to
+
+MenuCategory "1" -- "many" MenuItem: contains
+
+Table "1" -- "many" Order: serves
+
+Customer "1" -- "many" Order: places
+Order "1" -- "many" OrderItem: contains
+Order "1" -- "1" Payment: triggers
+
+Inventory "1" -- "1" MenuItem: tracks stock
+
+@enduml
