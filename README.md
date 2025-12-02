@@ -1,10 +1,6 @@
 # IntelliDine - Restaurant Management SaaS
 
-**Status**: Production Ready ✅ | Frontend Ready ✅ | E2E Flows Working ✅  
-**Last Updated**: October 22, 2025  
-**API Coverage**: 52/52 endpoints working (100%) ✅  
-**Database**: Multi-tenant PostgreSQL ✅  
-**Documentation**: Complete (10,000+ lines) ✅
+**frontend**: https://github.com/jntbatra/frontend-intellidine
 
 ---
 
